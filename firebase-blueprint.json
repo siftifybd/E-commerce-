@@ -1,0 +1,378 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Customer and administrative user profile records",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Customer full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number in Bangladesh format",
+          "maxLength": 20
+        },
+        "role": {
+          "type": "string",
+          "description": "User access level",
+          "enum": ["customer", "admin", "super_admin", "moderator", "order_manager", "delivery_man", "staff"]
+        },
+        "district": {
+          "type": "string",
+          "description": "Selected district in Bangladesh",
+          "maxLength": 50
+        },
+        "address": {
+          "type": "string",
+          "description": "Detailed delivery shipping address",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        }
+      },
+      "required": ["uid", "name", "role", "createdAt"]
+    },
+    "StaffAccount": {
+      "title": "StaffAccount",
+      "description": "Administrative and staff account records for manual management",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Unique username for staff login",
+          "maxLength": 50
+        },
+        "password": {
+          "type": "string",
+          "description": "Password for staff login",
+          "maxLength": 100
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Staff member full name",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "moderator", "order_manager", "delivery_man", "staff"]
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of enabled modules or permission IDs"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["username", "password", "fullName", "role", "isActive", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "E-commerce product catalog record",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Product title in Bengali or English",
+          "maxLength": 200
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly unique product slug",
+          "maxLength": 100
+        },
+        "price": {
+          "type": "number",
+          "description": "Current selling price in BDT"
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original retail price before discount"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Associated category ID",
+          "maxLength": 64
+        },
+        "stock": {
+          "type": "number",
+          "description": "Inventory stock quantity"
+        },
+        "stockStatus": {
+          "type": "string",
+          "enum": ["in_stock", "low_stock", "out_of_stock"]
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Flag for highlighting on home screen"
+        },
+        "isFlashSale": {
+          "type": "boolean",
+          "description": "Flag for inclusion in flash sale countdown"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["name", "slug", "price", "categoryId", "stock", "stockStatus"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase transaction and shipment lifecycle",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "description": "Human-readable invoice/order tracking code",
+          "maxLength": 50
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of ordering user or 'guest' for guest checkout",
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Recipient full name",
+          "maxLength": 100
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Delivery contact phone number",
+          "maxLength": 20
+        },
+        "district": {
+          "type": "string",
+          "description": "Delivery destination district",
+          "maxLength": 50
+        },
+        "address": {
+          "type": "string",
+          "description": "Full street address for courier delivery",
+          "maxLength": 400
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["cod", "bkash", "nagad"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["pending", "verified", "failed", "refunded"]
+        },
+        "orderStatus": {
+          "type": "string",
+          "enum": ["received", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"]
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Sum of product line items"
+        },
+        "deliveryFee": {
+          "type": "number",
+          "description": "Delivery fee applied"
+        },
+        "discount": {
+          "type": "number",
+          "description": "Coupon or promotional discount applied"
+        },
+        "total": {
+          "type": "number",
+          "description": "Grand total payable in BDT"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Order placement timestamp"
+        }
+      },
+      "required": [
+        "orderNumber",
+        "customerName",
+        "customerPhone",
+        "district",
+        "address",
+        "paymentMethod",
+        "orderStatus",
+        "total",
+        "createdAt"
+      ]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product catalog classification",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Category name in Bengali",
+          "maxLength": 100
+        },
+        "slug": {
+          "type": "string",
+          "description": "Category slug",
+          "maxLength": 64
+        },
+        "icon": {
+          "type": "string",
+          "description": "Lucide icon identifier or image URL",
+          "maxLength": 100
+        },
+        "productCount": {
+          "type": "number",
+          "description": "Count of active items in category"
+        }
+      },
+      "required": ["name", "slug"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Discount voucher definition",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Promo coupon code",
+          "maxLength": 30
+        },
+        "discountType": {
+          "type": "string",
+          "enum": ["fixed", "percentage"]
+        },
+        "discountValue": {
+          "type": "number",
+          "description": "Amount or percentage of discount"
+        },
+        "minOrderAmount": {
+          "type": "number",
+          "description": "Minimum subtotal required to apply"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the coupon can currently be redeemed"
+        }
+      },
+      "required": ["code", "discountType", "discountValue", "isActive"]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Promotional homepage slider banner",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Banner headline"
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Subheading or offer text"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optimized banner image URL"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether banner is actively displayed"
+        }
+      },
+      "required": ["title", "imageUrl", "isActive"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "User order, cart, product and marketing notifications",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Notification headline",
+          "maxLength": 150
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification detailed body text",
+          "maxLength": 500
+        },
+        "type": {
+          "type": "string",
+          "enum": ["order", "cart", "product", "system"]
+        },
+        "userId": {
+          "type": "string",
+          "description": "Target user UID or 'all' for broadcast",
+          "maxLength": 128
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Read receipt status"
+        },
+        "link": {
+          "type": "string",
+          "description": "Target destination link in app",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Notification generation timestamp"
+        }
+      },
+      "required": ["title", "message", "type", "userId", "isRead", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/notifications/{notificationId}": {
+      "schema": "AppNotification",
+      "description": "Real-time alerts, order status updates and promo notifications"
+    },
+    "/banners/{bannerId}": {
+      "schema": "Banner",
+      "description": "Promotional homepage banners"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Customer personal details, saved delivery addresses and preferences"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Public catalog of goods available for purchase"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders including guest and registered customer purchases"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product department and navigation taxonomy"
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Active promotional and discount codes"
+    },
+    "/staff_accounts/{staffId}": {
+      "schema": "StaffAccount",
+      "description": "Administrative and staff access accounts with role-based permissions"
+    }
+  }
+}
