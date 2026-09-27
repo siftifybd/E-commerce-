@@ -180,6 +180,9 @@ export const App: React.FC = () => {
               <Route path="refund-policy" element={<RefundPolicyPage />} />
               <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="terms" element={<TermsPage />} />
+              <Route path="legal/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="legal/terms-and-conditions" element={<TermsPage />} />
+              <Route path="legal/refund-policy" element={<RefundPolicyPage />} />
               <Route path="p/:slug" element={<CustomPage />} />
 
               {/* Fallback */}
