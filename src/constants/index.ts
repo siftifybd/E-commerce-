@@ -1,19 +1,21 @@
 /**
- * BD SHOPS — Application Constants & Configuration
+ * BD STORE — Application Constants & Configuration
  * Mobile-First E-Commerce
  */
 
 import { Coupon, OrderStatus, PaymentMethod } from '../types';
 
 export const APP_CONFIG = {
-  name: 'BD SHOPS',
+  name: 'BD STORE',
+  logo: '/bd_store_logo.png',
+  favicon: '/favicon.png',
   tagline: 'বাংলাদেশের বিশ্বস্ত প্রিমিয়াম অনলাইন শপিং',
   currency: '৳',
   currencyCode: 'BDT',
   supportPhone: '01796983725',
   supportWhatsApp: '01796983725',
   whatsappNumber: '01796983725',
-  supportEmail: 'support@bdshops.com.bd',
+  supportEmail: 'support@bdstore.com.bd',
   workingHours: 'সকাল ৯টা - রাত ১০টা (প্রতিদিন)',
   deliveryCharges: {
     insideDhaka: 70,

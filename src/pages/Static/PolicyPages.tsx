@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { APP_CONFIG } from '../../constants';
+import { FAQSection } from '../../components/common/FAQSection';
 
 /**
  * Contact Us Page
@@ -153,6 +154,9 @@ export const ContactPage: React.FC = () => {
             </button>
           </form>
         </div>
+
+        {/* Integrated FAQ Section */}
+        <FAQSection className="pt-2 px-0" />
       </div>
     </div>
   );
@@ -285,6 +289,20 @@ export const TermsPage: React.FC = () => {
           </p>
         </div>
       </div>
+    </div>
+  );
+};
+
+/**
+ * Dedicated FAQ Page
+ */
+export const FAQPage: React.FC = () => {
+  return (
+    <div className="min-h-screen py-8 bg-[#F8FAFC]">
+      <Helmet>
+        <title>সচরাচর জিজ্ঞাসিত প্রশ্নাবলী (FAQ) — BD STORE</title>
+      </Helmet>
+      <FAQSection />
     </div>
   );
 };

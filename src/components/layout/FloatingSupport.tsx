@@ -1,14 +1,29 @@
 /**
  * BD SHOPS — Floating Customer Support System ("সাহায্য লাগবে?")
  * Mobile-First Support Dock with Quick Call & WhatsApp Integration
+ * Uses Memoized Selectors for Real-time propagation of contact info with zero lag
  */
 
 import React, { useState } from 'react';
 import { PhoneCall, MessageCircle, HelpCircle, X, Headphones, Clock, ChevronRight } from 'lucide-react';
 import { APP_CONFIG } from '../../constants';
+import { useContactSettings, useBrandSettings } from '../../context/SettingsContext';
 
 export const FloatingSupport: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Memoized selectors directly listening to onSnapshot real-time settings
+  const { supportPhone, whatsappNumber: rawWhatsApp } = useContactSettings();
+  const { siteName: storeTitle } = useBrandSettings();
+
+  // Dynamic Contact Numbers synchronized in real time with Admin changes
+  const currentPhone = supportPhone || APP_CONFIG.supportPhone;
+  const cleanWhatsApp = rawWhatsApp.replace(/\D/g, '');
+  const formattedWhatsApp = cleanWhatsApp.startsWith('880') 
+    ? cleanWhatsApp 
+    : cleanWhatsApp.startsWith('0') 
+      ? `88${cleanWhatsApp}` 
+      : cleanWhatsApp || '8801796983725';
 
   return (
     <>
@@ -46,7 +61,7 @@ export const FloatingSupport: React.FC = () => {
                   <Headphones className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base">BD SHOPS কাস্টমার হেল্পলাইন</h3>
+                  <h3 className="font-bold text-base">{storeTitle} কাস্টমার হেল্পলাইন</h3>
                   <p className="text-xs text-white/85 mt-0.5">আমরা আপনাকে সহযোগিতা করতে সর্বদা প্রস্তুত</p>
                 </div>
               </div>
@@ -63,7 +78,7 @@ export const FloatingSupport: React.FC = () => {
             <div className="p-4 sm:p-5 space-y-3">
               {/* Call Option */}
               <a
-                href={`tel:${APP_CONFIG.supportPhone}`}
+                href={`tel:${currentPhone}`}
                 className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 hover:bg-emerald-100/60 transition-colors group"
               >
                 <div className="flex items-center gap-3.5">
@@ -72,7 +87,7 @@ export const FloatingSupport: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">সরাসরি কল করুন</h4>
-                    <p className="text-[11px] text-slate-600 font-medium">{APP_CONFIG.supportPhone}</p>
+                    <p className="text-[11px] text-slate-600 font-medium">{currentPhone}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#00BFA5] transition-colors" />
@@ -80,7 +95,7 @@ export const FloatingSupport: React.FC = () => {
 
               {/* WhatsApp Option */}
               <a
-                href={`https://wa.me/${APP_CONFIG.supportWhatsApp}?text=${encodeURIComponent('হ্যালো BD SHOPS, আমি একটি পণ্য/অর্ডার সম্পর্কে জানতে চাই।')}`}
+                href={`https://wa.me/${formattedWhatsApp}?text=${encodeURIComponent(`হ্যালো ${storeTitle}, আমি একটি পণ্য/অর্ডার সম্পর্কে জানতে চাই।`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between p-3.5 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/15 transition-colors group"
@@ -91,7 +106,7 @@ export const FloatingSupport: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">WhatsApp এ চ্যাট করুন</h4>
-                    <p className="text-[11px] text-slate-600 font-medium">তাৎক্ষণিক মেসেজ ও অর্ডার ট্র্যাকিং</p>
+                    <p className="text-[11px] text-slate-600 font-medium">তাৎক্ষণিক মেসেজ ও অর্ডার ট্র্যাকিং ({rawWhatsApp})</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#25D366] transition-colors" />

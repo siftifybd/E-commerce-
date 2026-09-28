@@ -38,6 +38,14 @@ export interface CustomerReview {
   date: string;
 }
 
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: 'shipping' | 'returns' | 'payments' | 'general';
+  order?: number;
+}
+
 export interface CustomPage {
   id: string;
   title: string;
@@ -132,6 +140,9 @@ export interface FeatureToggles {
   multiImageGalleryEnabled?: boolean;
   autoInvoiceEnabled?: boolean;
   staffManagementEnabled?: boolean;
+  notificationPopupEnabled?: boolean;
+  faqEnabled?: boolean;
+  faqs?: FAQItem[];
 }
 
 export interface SocialLinks {
@@ -287,14 +298,54 @@ export const DEFAULT_FEATURE_TOGGLES: FeatureToggles = {
   multiImageGalleryEnabled: true,
   autoInvoiceEnabled: true,
   staffManagementEnabled: true,
+  notificationPopupEnabled: true,
+  faqEnabled: true,
+  faqs: [
+    {
+      id: 'faq-1',
+      question: 'ডেলিভারি হতে কত দিন সময় লাগে এবং ডেলিভারি চার্জ কত?',
+      answer: 'ঢাকা সিটির ভেতরে ২৪ থেকে ৪৮ ঘণ্টার মধ্যে ডেলিভারি সম্পন্ন হয় (চার্জ ৭০ টাকা) এবং ঢাকা সিটির বাইরে ২ থেকে ৪ দিনের মধ্যে সারা বাংলাদেশে ক্যাশ অন হোম ডেলিভারি পাওয়া যায় (চার্জ ১৩০ টাকা)। ১০০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি সুবিধা উপভোগ করতে পারবেন।',
+      category: 'shipping'
+    },
+    {
+      id: 'faq-2',
+      question: 'আমি কি সারা বাংলাদেশ থেকে ক্যাশ অন ডেলিভারি (Cash on Delivery) পাবো?',
+      answer: 'হ্যাঁ! সারা বাংলাদেশের ৬৪টি জেলা ও যেকোনো উপজেলা থেকে কোনো অগ্রিম পেমেন্ট ছাড়াই ক্যাশ অন ডেলিভারিতে পণ্য অর্ডার করতে পারেন। ডেলিভারি ম্যানের সামনে পণ্য চেক করে মূল্য পরিশোধ করবেন।',
+      category: 'payments'
+    },
+    {
+      id: 'faq-3',
+      question: 'পণ্য পছন্দ না হলে বা ডিফেক্ট থাকলে রিটার্ন ও রিফান্ডের নিয়ম কী?',
+      answer: 'পণ্য গ্রহণের পর কোনো প্রকার ভাঙা, ত্রুটি বা সাইজের অমিল দেখা দিলে পণ্য পাওয়ার ৭ দিনের মধ্যে আমাদের হেল্পলাইন বা হোয়াটসঅ্যাপে যোগাযোগ করলে সম্পূর্ণ বিনামূল্যে এক্সচেঞ্জ বা ফুল রিফান্ড দেওয়া হয়।',
+      category: 'returns'
+    },
+    {
+      id: 'faq-4',
+      question: 'কোন কোন মাধ্যমে পেমেন্ট করা যায়?',
+      answer: 'আমরা ক্যাশ অন ডেলিভারির পাশাপাশি বিকাশ (bKash), নগদ (Nagad), রকেট (Rocket) এবং যেকোনো ভিসা/মাস্টারকার্ড ও ইন্টারনেট ব্যাংকিংয়ের মাধ্যমে সুরক্ষিত পেমেন্ট গ্রহণ করি।',
+      category: 'payments'
+    },
+    {
+      id: 'faq-5',
+      question: 'অর্ডারের ডেলিভারি স্ট্যাটাস কীভাবে ট্র্যাক করব?',
+      answer: 'আমাদের ওয়েবসাইটের "অর্ডার ট্র্যাকিং" পেজে গিয়ে আপনার অর্ডার আইডি ও মোবাইল নম্বর প্রদান করলেই মুহূর্তের মধ্যে আপনার পার্সেলটির লাইভ লোকেশন ও ডেলিভারি আপডেট দেখতে পারবেন।',
+      category: 'shipping'
+    },
+    {
+      id: 'faq-6',
+      question: 'রিফান্ডের টাকা কত দিনের মধ্যে এবং কীভাবে ফেরত দেওয়া হয়?',
+      answer: 'রিটার্ন করা পণ্যটি আমাদের ঠিকানায় পৌঁছানোর পর কোয়ালিটি চেকিং সম্পন্ন করে ৩-৫ কার্যদিবসের মধ্যে আপনার বিকাশ, নগদ অথবা ব্যাংক অ্যাকাউন্টে রিফান্ডের টাকা সরাসরি পাঠিয়ে দেওয়া হয়।',
+      category: 'returns'
+    }
+  ],
 };
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
-  siteName: 'BD SHOPS',
-  siteLogo: '',
-  favicon: '',
+  siteName: 'BD STORE',
+  siteLogo: '/bd_store_logo.png',
+  favicon: '/favicon.png',
   themeMode: 'light',
-  themeColor: '#ea580c',
+  themeColor: '#00BFA5',
   currencySymbol: '৳',
   currencyCode: 'BDT',
   language: 'bn',
@@ -307,15 +358,15 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     whatsapp: 'https://wa.me/8801796983725',
   },
   emailSettings: {
-    adminEmail: 'admin@bdshops.com.bd',
-    orderNotificationEmail: 'orders@bdshops.com.bd',
-    smtpHost: 'smtp.bdshops.com.bd',
+    adminEmail: 'admin@bdstore.com.bd',
+    orderNotificationEmail: 'orders@bdstore.com.bd',
+    smtpHost: 'smtp.bdstore.com.bd',
   },
   smsSettings: {
     enabled: true,
     provider: 'Greenweb SMS',
     apiKey: '',
-    senderId: 'BDSHOPS',
+    senderId: 'BDSTORE',
   },
   taxSettings: {
     enabled: false,
@@ -326,7 +377,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   maintenanceNotice: 'ওয়েবসাইট মেইনটেন্যান্স বা সাময়িক উন্নয়নের কাজ চলছে। কিছুক্ষণের মধ্যে আবার চালু হবে।',
   whatsappNumber: '01796983725',
   supportPhone: '01796983725',
-  supportEmail: 'support@bdshops.com.bd',
+  supportEmail: 'support@bdstore.com.bd',
   payments: DEFAULT_PAYMENT_SETTINGS,
   features: DEFAULT_FEATURE_TOGGLES,
   customPages: [],
@@ -357,12 +408,25 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
  * Fetch dynamic store settings from Firestore with fallback to defaults
  */
 export async function fetchStoreSettings(): Promise<StoreSettings> {
+  // Ultra-fast instant fallback: check local storage cache if available
+  let cachedFallback: StoreSettings | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('bdshops_cached_settings');
+      if (cached) {
+        cachedFallback = { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(cached) };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data() as StoreSettings;
-      return {
+      const merged: StoreSettings = {
         siteName: data.siteName || DEFAULT_STORE_SETTINGS.siteName,
         siteLogo: data.siteLogo || DEFAULT_STORE_SETTINGS.siteLogo,
         favicon: data.favicon || DEFAULT_STORE_SETTINGS.favicon,
@@ -402,16 +466,29 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
           activeColor: data.mobileFooter?.activeColor || DEFAULT_STORE_SETTINGS.mobileFooter!.activeColor,
           inactiveColor: data.mobileFooter?.inactiveColor || DEFAULT_STORE_SETTINGS.mobileFooter!.inactiveColor,
           showLabels: data.mobileFooter?.showLabels ?? DEFAULT_STORE_SETTINGS.mobileFooter!.showLabels,
-          buttons: data.mobileFooter?.buttons || DEFAULT_STORE_SETTINGS.mobileFooter?.buttons || [],
+          buttons: data.mobileFooter?.buttons || DEFAULT_STORE_SETTINGS.mobileFooter!.buttons || [],
         },
         adminPasscode: data.adminPasscode || DEFAULT_STORE_SETTINGS.adminPasscode,
       };
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('bdshops_cached_settings', JSON.stringify(merged));
+        } catch {
+          // ignore
+        }
+      }
+
+      return merged;
     }
   } catch (err) {
-    console.warn('Could not fetch store settings from Firestore, using default:', err);
+    console.warn('Could not fetch store settings from Firestore, using cached/default:', err);
+    if (cachedFallback) {
+      return cachedFallback;
+    }
   }
 
-  return DEFAULT_STORE_SETTINGS;
+  return cachedFallback || DEFAULT_STORE_SETTINGS;
 }
 
 /**
@@ -472,6 +549,17 @@ export function subscribeToStoreSettings(
           },
           adminPasscode: data.adminPasscode || DEFAULT_STORE_SETTINGS.adminPasscode,
         };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('bdshops_cached_settings', JSON.stringify(mergedSettings));
+            if (mergedSettings.whatsappNumber) localStorage.setItem('bd_shops_whatsapp_number', mergedSettings.whatsappNumber);
+            if (mergedSettings.supportPhone) localStorage.setItem('bd_shops_support_phone', mergedSettings.supportPhone);
+            if (mergedSettings.siteName) localStorage.setItem('bd_shops_site_name', mergedSettings.siteName);
+            if (mergedSettings.siteLogo) localStorage.setItem('bd_shops_site_logo', mergedSettings.siteLogo);
+          } catch {
+            // ignore
+          }
+        }
         onUpdate(mergedSettings);
       } else {
         onUpdate(DEFAULT_STORE_SETTINGS);
@@ -521,9 +609,15 @@ export async function saveStoreSettingsInFirestore(settings: StoreSettings): Pro
 
     // Update local storage for instant sync across components
     if (typeof window !== 'undefined') {
-      if (settings.whatsappNumber) localStorage.setItem('bd_shops_whatsapp_number', settings.whatsappNumber);
-      if (settings.siteName) localStorage.setItem('bd_shops_site_name', settings.siteName);
-      if (settings.siteLogo) localStorage.setItem('bd_shops_site_logo', settings.siteLogo);
+      try {
+        localStorage.setItem('bdshops_cached_settings', JSON.stringify(settings));
+        if (settings.whatsappNumber) localStorage.setItem('bd_shops_whatsapp_number', settings.whatsappNumber);
+        if (settings.supportPhone) localStorage.setItem('bd_shops_support_phone', settings.supportPhone);
+        if (settings.siteName) localStorage.setItem('bd_shops_site_name', settings.siteName);
+        if (settings.siteLogo) localStorage.setItem('bd_shops_site_logo', settings.siteLogo);
+      } catch {
+        // ignore
+      }
     }
   } catch (err) {
     console.error('Error saving store settings in Firestore:', err);

@@ -154,8 +154,8 @@ export const Header: React.FC = () => {
     }
   };
 
-  const currentSiteName = storeSettings?.siteName || 'BD SHOPS';
-  const currentSiteLogo = storeSettings?.siteLogo || '';
+  const currentSiteName = storeSettings?.siteName || 'BD STORE';
+  const currentSiteLogo = storeSettings?.siteLogo || '/bd_store_logo.png';
   const currentPhone = storeSettings?.supportPhone || APP_CONFIG.supportPhone;
 
   return (
@@ -212,12 +212,12 @@ export const Header: React.FC = () => {
           </button>
 
           {/* BRAND LOGO */}
-          <Link to="/" className="flex items-center gap-2 select-none shrink-0">
+          <Link to="/" className="flex items-center gap-2.5 select-none shrink-0 group">
             {currentSiteLogo ? (
               <img
                 src={currentSiteLogo}
                 alt={currentSiteName}
-                className="h-9 sm:h-11 max-w-[160px] object-contain"
+                className="h-10 sm:h-11 w-10 sm:w-11 rounded-xl shadow-xs object-cover border border-slate-200/80 group-hover:scale-105 transition-transform"
               />
             ) : (
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#00796B] via-[#00BFA5] to-teal-400 flex items-center justify-center text-white font-extrabold shadow-md shadow-[#00BFA5]/25">
@@ -227,11 +227,11 @@ export const Header: React.FC = () => {
               </div>
             )}
             <div>
-              <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center">
+              <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center leading-none">
                 {currentSiteName}
               </span>
-              <span className="hidden sm:block text-[9px] font-bold text-slate-400 tracking-widest uppercase">
-                Premium Store BD
+              <span className="hidden sm:block text-[9px] font-bold text-[#00BFA5] tracking-widest uppercase mt-0.5">
+                Official Store
               </span>
             </div>
           </Link>
@@ -540,13 +540,11 @@ export const Header: React.FC = () => {
               <div className="flex items-center justify-between">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5">
                   {currentSiteLogo ? (
-                    <div className="bg-white p-1 rounded-xl shadow-inner">
-                      <img
-                        src={currentSiteLogo}
-                        alt={currentSiteName}
-                        className="h-8 max-w-[100px] object-contain"
-                      />
-                    </div>
+                    <img
+                      src={currentSiteLogo}
+                      alt={currentSiteName}
+                      className="h-10 w-10 rounded-xl object-cover border border-white/40 shadow-sm"
+                    />
                   ) : (
                     <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-black text-white text-base">
                       {currentSiteName.substring(0, 2).toUpperCase()}

@@ -63,6 +63,7 @@ import {
   Zap,
   Star,
   Tag,
+  HelpCircle,
   Heart,
   UserCheck,
   Users,
@@ -93,6 +94,8 @@ import {
   Banner,
   CustomerReview,
   FeatureToggles,
+  FAQItem,
+  DEFAULT_FEATURE_TOGGLES,
   sanitizeForFirestore,
 } from '../../services/settings';
 import {
@@ -214,6 +217,11 @@ export const AdminPortalPage: React.FC = () => {
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [activeSystemSubTab, setActiveSystemSubTab] = useState<string | null>(null);
+  const [editingFaq, setEditingFaq] = useState<FAQItem | null>(null);
+  const [newFaqQuestion, setNewFaqQuestion] = useState('');
+  const [newFaqAnswer, setNewFaqAnswer] = useState('');
+  const [newFaqCategory, setNewFaqCategory] = useState<'shipping' | 'returns' | 'payments' | 'general'>('shipping');
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [staffUser, setStaffUser] = useState<StaffAccount | null>(() => {
     const stored = sessionStorage.getItem('bdshops_staff_auth');
     return stored ? JSON.parse(stored) : null;
@@ -1275,6 +1283,86 @@ export const AdminPortalPage: React.FC = () => {
   const removeBanner = (id: string) => {
     const currentBanners = storeSettings.features?.banners || [];
     updateFeature('banners', currentBanners.filter(b => b.id !== id));
+  };
+
+  // FAQ Management Functions
+  const handleOpenAddFaq = () => {
+    setEditingFaq(null);
+    setNewFaqQuestion('');
+    setNewFaqAnswer('');
+    setNewFaqCategory('shipping');
+    setIsFaqModalOpen(true);
+  };
+
+  const handleOpenEditFaq = (faq: FAQItem) => {
+    setEditingFaq(faq);
+    setNewFaqQuestion(faq.question);
+    setNewFaqAnswer(faq.answer);
+    setNewFaqCategory(faq.category);
+    setIsFaqModalOpen(true);
+  };
+
+  const handleSaveFaq = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFaqQuestion.trim() || !newFaqAnswer.trim()) {
+      toast.error('প্রশ্ন ও উত্তর উভয়ই পূরণ করুন!');
+      return;
+    }
+
+    const currentFaqs: FAQItem[] =
+      storeSettings.features?.faqs && storeSettings.features.faqs.length > 0
+        ? [...storeSettings.features.faqs]
+        : [...(DEFAULT_FEATURE_TOGGLES.faqs as FAQItem[])];
+
+    let updatedFaqs: FAQItem[];
+
+    if (editingFaq) {
+      updatedFaqs = currentFaqs.map((f) =>
+        f.id === editingFaq.id
+          ? {
+              ...f,
+              question: newFaqQuestion.trim(),
+              answer: newFaqAnswer.trim(),
+              category: newFaqCategory,
+            }
+          : f
+      );
+      toast.success('FAQ সফলভাবে আপডেট হয়েছে!');
+    } else {
+      const newFaq: FAQItem = {
+        id: `faq-${Date.now()}`,
+        question: newFaqQuestion.trim(),
+        answer: newFaqAnswer.trim(),
+        category: newFaqCategory,
+      };
+      updatedFaqs = [newFaq, ...currentFaqs];
+      toast.success('নতুন FAQ সফলভাবে যোগ করা হয়েছে!');
+    }
+
+    updateFeature('faqs', updatedFaqs, true);
+    setIsFaqModalOpen(false);
+    setEditingFaq(null);
+    setNewFaqQuestion('');
+    setNewFaqAnswer('');
+  };
+
+  const handleDeleteFaq = (faqId: string) => {
+    if (!window.confirm('আপনি কি এই FAQ প্রশ্নটি মুছে ফেলতে চান?')) return;
+
+    const currentFaqs: FAQItem[] =
+      storeSettings.features?.faqs && storeSettings.features.faqs.length > 0
+        ? [...storeSettings.features.faqs]
+        : [...(DEFAULT_FEATURE_TOGGLES.faqs as FAQItem[])];
+
+    const updatedFaqs = currentFaqs.filter((f) => f.id !== faqId);
+    updateFeature('faqs', updatedFaqs, true);
+    toast.success('FAQ মুছে ফেলা হয়েছে!');
+  };
+
+  const handleResetFaqsToDefault = () => {
+    if (!window.confirm('আপনি কি সকল FAQ প্রশ্ন ডিফল্ট মানে রিসেট করতে চান?')) return;
+    updateFeature('faqs', DEFAULT_FEATURE_TOGGLES.faqs, true);
+    toast.success('FAQ সমূহ ডিফল্ট মানে রিসেট করা হয়েছে!');
   };
 
   const addReview = () => {
@@ -3259,6 +3347,7 @@ export const AdminPortalPage: React.FC = () => {
                       { id: 'features', label: 'ফিচার কন্ট্রোল', icon: <Power />, color: 'bg-slate-800', desc: 'সব ফিচার অন/অফ' },
                       { id: 'security', label: 'নিরাপত্তা ও কোড', icon: <Lock />, color: 'bg-rose-600', desc: 'অ্যাডমিন পাসকোড সেটিংস' },
                       { id: 'monitoring', label: 'শপ মনিটরিং', icon: <Eye />, color: 'bg-purple-600', desc: 'অনলাইন/অফলাইন স্ট্যাটাস' },
+                      { id: 'faq', label: 'FAQ প্রশ্নোত্তর', icon: <HelpCircle />, color: 'bg-teal-600', desc: 'শিপিং, রিটার্ন ও পেমেন্ট' },
                       { id: 'staff', label: 'কর্মী ব্যবস্থাপনা', icon: <Boxes />, color: 'bg-cyan-600', desc: 'মডারেটর ও রোল ম্যানেজমেন্ট' },
                     ].map((item) => (
                       <button
@@ -4013,6 +4102,36 @@ export const AdminPortalPage: React.FC = () => {
                           </div>
                        </div>
                     </div>
+
+                    {/* Notification Popup Icon Control Card */}
+                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-4">
+                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                          <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#00BFA5] flex items-center justify-center">
+                               <Bell className="w-5 h-5" />
+                             </div>
+                             <div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase">নোটিফিকেশন পপআপ আইকন</h4>
+                                <p className="text-[10px] text-slate-400 font-bold">ওয়েবসাইটের হেডারে নোটিফিকেশন বেল আইকন প্রদর্শন চালু বা বন্ধ রাখুন</p>
+                             </div>
+                          </div>
+                          <button 
+                             type="button"
+                             onClick={() => updateFeature('notificationPopupEnabled', storeSettings.features?.notificationPopupEnabled === false ? true : false, true)}
+                             className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                               storeSettings.features?.notificationPopupEnabled !== false 
+                                 ? 'bg-[#00BFA5] text-white shadow-md shadow-[#00BFA5]/25' 
+                                 : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                             }`}
+                           >
+                             <span className={`w-2 h-2 rounded-full ${storeSettings.features?.notificationPopupEnabled !== false ? 'bg-white animate-pulse' : 'bg-slate-400'}`} />
+                             <span>{storeSettings.features?.notificationPopupEnabled !== false ? 'অন (ON)' : 'অফ (OFF)'}</span>
+                           </button>
+                       </div>
+                       <p className="text-[11px] text-slate-500 font-medium">
+                         এই অপশনটি <b>অন</b> থাকলে ওয়েবসাইটে নোটিফিকেশন বেল আইকন প্রদর্শিত হবে এবং গ্রাহক তাতে ট্যাপ করলে অ্যানিমেশন সহ সম্পূর্ণ নোটিফিকেশন পেজে নিয়ে যাবে। <b>অফ</b> থাকলে হেডারের আইকনটি লুকানো থাকবে।
+                       </p>
+                    </div>
                   </div>
                 )}
 
@@ -4140,6 +4259,7 @@ export const AdminPortalPage: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {[
+                            { label: 'নোটিফিকেশন আইকন', key: 'notificationPopupEnabled', icon: <Bell />, color: 'text-teal-600' },
                             { label: 'নোটিশ বার', key: 'topNoticeEnabled', icon: <Bell />, color: 'text-rose-500' },
                             { label: 'হিরো স্লাইডার', key: 'heroSliderEnabled', icon: <ImageIcon />, color: 'text-blue-500' },
                             { label: 'ফ্ল্যাশ সেল', key: 'flashSaleEnabled', icon: <Zap />, color: 'text-orange-500' },
@@ -4159,6 +4279,7 @@ export const AdminPortalPage: React.FC = () => {
                             { label: 'কাস্টমার CRM', key: 'crmEnabled', icon: <ShieldCheck />, color: 'text-teal-600' },
                             { label: 'গ্যালারি ম্যানেজমেন্ট', key: 'multiImageGalleryEnabled', icon: <ImageIcon />, color: 'text-amber-600' },
                             { label: 'অটো ইনভয়েস', key: 'autoInvoiceEnabled', icon: <ExternalLink />, color: 'text-blue-700' },
+                            { label: 'সাধারণ প্রশ্নোত্তর (FAQ)', key: 'faqEnabled', icon: <HelpCircle />, color: 'text-teal-600' },
                             { label: 'কর্মী ব্যবস্থাপনা', key: 'staffManagementEnabled', icon: <Boxes />, color: 'text-indigo-700' },
                           ].map((item) => (
                             <button
@@ -4486,7 +4607,7 @@ export const AdminPortalPage: React.FC = () => {
                    </div>
                  )}
 
-                {activeSystemSubTab === 'monitoring' && (
+                 {activeSystemSubTab === 'monitoring' && (
                   <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4">
                     <div className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-xl space-y-8">
                        <div className="flex items-center gap-3 border-b border-slate-50 pb-5">
@@ -4536,12 +4657,242 @@ export const AdminPortalPage: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {activeSystemSubTab === 'faq' && (
+                  <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="bg-white p-6 sm:p-8 rounded-[3rem] border border-slate-200 shadow-xl space-y-6">
+                      {/* Subtab Header */}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-teal-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+                            <HelpCircle className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">
+                              সচরাচর জিজ্ঞাসিত প্রশ্নাবলী (FAQ) কন্ট্রোল
+                            </h3>
+                            <p className="text-[11px] font-bold text-slate-400">
+                              শিপিং, রিটার্ন ও পেমেন্ট বিষয়ক প্রশ্ন যোগ ও এডিট করুন
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Top Action Buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleResetFaqsToDefault}
+                            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                            title="ডিফল্ট FAQ-তে রিসেট করুন"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 inline mr-1" />
+                            রিসেট
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleOpenAddFaq}
+                            className="px-4 py-2.5 bg-[#00BFA5] hover:bg-[#00A892] text-white rounded-2xl text-xs font-black shadow-md shadow-[#00BFA5]/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>নতুন প্রশ্ন যোগ করুন</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Main Enable/Disable Toggle */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-teal-50/60 border border-teal-100 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center text-[#00796B]">
+                            <HelpCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-black text-slate-800">
+                              ওয়েবসাইটে FAQ সেকশন প্রদর্শন
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              কন্টাক্ট পেজ ও ডেডিকেটেড পেজে FAQ দেখানো হবে কি না নিয়ন্ত্রণ করুন
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateFeature(
+                              'faqEnabled',
+                              storeSettings.features?.faqEnabled === false ? true : false,
+                              true
+                            )
+                          }
+                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                            storeSettings.features?.faqEnabled !== false
+                              ? 'bg-emerald-600 text-white shadow-md'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              storeSettings.features?.faqEnabled !== false
+                                ? 'bg-white animate-pulse'
+                                : 'bg-slate-400'
+                            }`}
+                          />
+                          <span>{storeSettings.features?.faqEnabled !== false ? 'অন (ON)' : 'অফ (OFF)'}</span>
+                        </button>
+                      </div>
+
+                      {/* FAQ Items List */}
+                      <div className="space-y-3 pt-2">
+                        {((storeSettings.features?.faqs && storeSettings.features.faqs.length > 0
+                          ? storeSettings.features.faqs
+                          : DEFAULT_FEATURE_TOGGLES.faqs) as FAQItem[]).map((faq, idx) => (
+                          <div
+                            key={faq.id || idx}
+                            className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-300 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                          >
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-[11px] font-black text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
+                                {idx + 1}
+                              </span>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded-md bg-teal-100 text-[#00796B] text-[10px] font-black uppercase">
+                                    {faq.category === 'shipping'
+                                      ? 'শিপিং'
+                                      : faq.category === 'returns'
+                                      ? 'রিটার্ন'
+                                      : faq.category === 'payments'
+                                      ? 'পেমেন্ট'
+                                      : 'সাধারণ'}
+                                  </span>
+                                </div>
+                                <h5 className="text-xs sm:text-sm font-black text-slate-900 leading-snug">
+                                  {faq.question}
+                                </h5>
+                                <p className="text-[11px] sm:text-xs text-slate-500 font-medium line-clamp-2">
+                                  {faq.answer}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditFaq(faq)}
+                                className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-[#00BFA5] text-slate-700 hover:text-[#00796B] text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                              >
+                                এডিট
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteFaq(faq.id)}
+                                className="p-1.5 rounded-xl bg-white border border-slate-200 hover:border-rose-300 text-slate-400 hover:text-rose-600 transition-all shadow-2xs cursor-pointer"
+                                title="মুছুন"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {/* Modals and other UI elements follow */}
           </main>
         </div>
       </div>
+
+      {/* ============================================================= */}
+      {/* FAQ MODAL (ADD / EDIT) */}
+      {/* ============================================================= */}
+      {isFaqModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl space-y-4 overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-teal-600" />
+                <span>{editingFaq ? 'FAQ প্রশ্ন এডিট করুন' : 'নতুন FAQ প্রশ্ন যোগ করুন'}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFaqModalOpen(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFaq} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  ক্যাটাগরি নির্ধারণ করুন *
+                </label>
+                <select
+                  value={newFaqCategory}
+                  onChange={(e) =>
+                    setNewFaqCategory(
+                      e.target.value as 'shipping' | 'returns' | 'payments' | 'general'
+                    )
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00BFA5] focus:bg-white"
+                >
+                  <option value="shipping">শিপিং ও ডেলিভারি (Shipping)</option>
+                  <option value="returns">রিটার্ন ও রিফান্ড (Returns)</option>
+                  <option value="payments">পেমেন্ট ও বিলিং (Payments)</option>
+                  <option value="general">সাধারণ জিজ্ঞাসা (General)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  প্রশ্নটি লিখুন *
+                </label>
+                <input
+                  type="text"
+                  value={newFaqQuestion}
+                  onChange={(e) => setNewFaqQuestion(e.target.value)}
+                  placeholder="যেমন: ডেলিভারি হতে কত দিন সময় লাগে?"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00BFA5] focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  বিস্তারিত উত্তর লিখুন *
+                </label>
+                <textarea
+                  rows={4}
+                  value={newFaqAnswer}
+                  onChange={(e) => setNewFaqAnswer(e.target.value)}
+                  placeholder="গ্রাহকের জন্য স্পষ্ট ও সহজ বাংলায় উত্তরটি লিখুন..."
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00BFA5] focus:bg-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsFaqModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#00BFA5] hover:bg-[#00A892] text-white text-xs font-black shadow-md shadow-[#00BFA5]/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{editingFaq ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================= */}
       {/* MODAL 1: ADD CATEGORY MODAL */}

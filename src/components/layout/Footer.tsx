@@ -68,19 +68,17 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10">
           {/* Column 1: Brand & Bio */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-2.5 group">
               {logo ? (
-                <img src={logo} alt={siteName} className="h-9 w-auto object-contain max-w-[140px]" />
+                <img src={logo} alt={siteName} className="h-10 w-10 object-cover rounded-xl border border-slate-700 shadow-sm group-hover:scale-105 transition-transform" />
               ) : (
-                <>
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00A892] to-[#00BFA5] flex items-center justify-center text-white font-bold text-base shadow-sm">
-                    {siteName.charAt(0)}
-                  </div>
-                  <span className="text-xl font-extrabold tracking-tight text-white">
-                    {siteName}
-                  </span>
-                </>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00A892] to-[#00BFA5] flex items-center justify-center text-white font-bold text-base shadow-sm">
+                  {siteName.charAt(0)}
+                </div>
               )}
+              <span className="text-xl font-extrabold tracking-tight text-white group-hover:text-[#00BFA5] transition-colors">
+                {siteName}
+              </span>
             </Link>
             <p className="text-xs text-slate-400 leading-relaxed">
               {APP_CONFIG.tagline}। প্রিমিয়াম কোয়ালিটির পণ্য ও বিশ্বস্ত সেবা পৌঁছে দেওয়া আমাদের অঙ্গীকার।

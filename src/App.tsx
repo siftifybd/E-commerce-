@@ -18,6 +18,7 @@ import { TopNoticeBar } from './components/common/TopNoticeBar';
 import { PromoModal } from './components/common/PromoModal';
 import { FloatingWhatsApp } from './components/common/FloatingWhatsApp';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
+import { MobilePushNotificationBanner } from './components/common/MobilePushNotificationBanner';
 
 // Pages
 import { HomePage } from './pages/Home/HomePage';
@@ -45,6 +46,7 @@ import {
   RefundPolicyPage,
   PrivacyPolicyPage,
   TermsPage,
+  FAQPage,
 } from './pages/Static/PolicyPages';
 import { CustomPage } from './pages/Static/CustomPage';
 
@@ -85,6 +87,7 @@ export const App: React.FC = () => {
           <PromoModal />
           <FloatingWhatsApp />
           <PWAInstallPrompt />
+          <MobilePushNotificationBanner />
 
           {/* Global Toast Notifications */}
           <Toaster
@@ -177,6 +180,7 @@ export const App: React.FC = () => {
 
               {/* Policy & Support Pages */}
               <Route path="contact" element={<ContactPage />} />
+              <Route path="faq" element={<FAQPage />} />
               <Route path="refund-policy" element={<RefundPolicyPage />} />
               <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="terms" element={<TermsPage />} />
