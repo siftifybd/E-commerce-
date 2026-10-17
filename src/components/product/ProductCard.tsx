@@ -71,6 +71,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
 
+        {/* Pinned Tag 📌 */}
+        {product.isPinned && (
+          <div className={`absolute ${discountPercent && discountPercent > 0 ? 'top-8' : 'top-2'} left-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1`}>
+            <span>📌</span>
+            <span>পিন করা</span>
+          </div>
+        )}
+
         {/* Featured Tag */}
         {product.isFeatured && (
           <div className="absolute top-2 right-2 z-10 bg-[#00796B] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">

@@ -21,6 +21,8 @@ import {
   MessageCircle,
   Award,
   TrendingUp,
+  Layers,
+  Pin,
 } from 'lucide-react';
 import { ProductCard } from '../../components/product/ProductCard';
 import { FlashSaleSection } from '../../components/home/FlashSaleSection';
@@ -29,6 +31,8 @@ import { ReviewsSection } from '../../components/home/ReviewsSection';
 import {
   fetchProducts,
   fetchCategories,
+  subscribeToProducts,
+  subscribeToCategories,
 } from '../../services/products';
 import { Product, Category } from '../../types';
 import { APP_CONFIG } from '../../constants';
@@ -82,26 +86,105 @@ export const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadHomeData = async () => {
-      setLoading(true);
-      try {
-        const [prods, cats] = await Promise.all([
-          fetchProducts(),
-          fetchCategories(),
-        ]);
+    setLoading(true);
+    let isMounted = true;
+
+    // Real-time Firestore onSnapshot for Products (syncs pricing, stock, pins, new products instantly)
+    const unsubProducts = subscribeToProducts(
+      (prods) => {
+        if (!isMounted) return;
         setAllProducts(prods);
         setFeaturedProducts(prods.filter((p) => p.isFeatured || p.rating >= 4.5).slice(0, 8));
         setFlashSaleProducts(prods.filter((p) => p.isFlashSale || (p.discountPercentage && p.discountPercentage > 15)).slice(0, 4));
         setNewArrivals(prods.filter((p) => p.isNewArrival).slice(0, 8));
-        setCategories(cats);
-      } catch (err) {
-        console.error('Failed to load homepage data:', err);
-      } finally {
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Failed to subscribe to products:', err);
         setLoading(false);
       }
+    );
+
+    // Real-time Firestore onSnapshot for Categories
+    const unsubCategories = subscribeToCategories(
+      (cats) => {
+        if (!isMounted) return;
+        setCategories(cats);
+      },
+      (err) => {
+        console.error('Failed to subscribe to categories:', err);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubProducts();
+      unsubCategories();
     };
-    loadHomeData();
   }, []);
+
+  // Organize products by Category and place pinned (isPinned) products first
+  const categorySections = React.useMemo(() => {
+    if (!categories.length && !allProducts.length) return [];
+
+    const sections = categories
+      .map((cat) => {
+        const catProds = allProducts.filter((p) => {
+          return (
+            p.categoryId === cat.id ||
+            p.categorySlug === cat.slug ||
+            (p.categoryName && cat.name && p.categoryName.trim().toLowerCase() === cat.name.trim().toLowerCase())
+          );
+        });
+
+        // Sort: pinned (📌) products appear first
+        const sortedProds = [...catProds].sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return 0;
+        });
+
+        const pinnedCount = sortedProds.filter((p) => p.isPinned).length;
+
+        return {
+          category: cat,
+          products: sortedProds,
+          pinnedCount,
+        };
+      })
+      .filter((sec) => sec.products.length > 0);
+
+    // Prioritize categories that have pinned products
+    sections.sort((a, b) => {
+      if (a.pinnedCount > 0 && b.pinnedCount === 0) return -1;
+      if (a.pinnedCount === 0 && b.pinnedCount > 0) return 1;
+      return (a.category.order || 0) - (b.category.order || 0);
+    });
+
+    // Account for any remaining products whose categories are not in the main category list
+    const accountedIds = new Set(sections.flatMap((s) => s.products.map((p) => p.id)));
+    const remainingProds = allProducts.filter((p) => !accountedIds.has(p.id));
+
+    if (remainingProds.length > 0) {
+      const sortedRemaining = [...remainingProds].sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0;
+      });
+      sections.push({
+        category: {
+          id: 'cat_more_items',
+          name: 'অন্যান্য আকর্ষণীয় পণ্য',
+          slug: 'more-products',
+          image: '',
+        },
+        products: sortedRemaining,
+        pinnedCount: sortedRemaining.filter((p) => p.isPinned).length,
+      });
+    }
+
+    return sections;
+  }, [categories, allProducts]);
 
   const siteName = settings.siteName || APP_CONFIG.name;
   const freeThreshold = settings.features?.freeDeliveryThreshold || APP_CONFIG.deliveryCharges.freeDeliveryThreshold;
@@ -212,35 +295,81 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. BEST SELLING PRODUCTS GRID */}
-      <section className="max-w-7xl mx-auto px-4 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div>
-            <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#00BFA5]" />
-              বেস্ট সেলিং পণ্যসমূহ
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">সবচেয়ে বেশি বিক্রিত ও গ্রাহকদের পছন্দের পণ্য</p>
-          </div>
-          <Link
-            to="/products"
-            className="text-xs sm:text-sm font-bold text-[#00796B] hover:text-[#00BFA5] flex items-center gap-1"
-          >
-            সবগুলো দেখুন <ArrowRight className="w-4 h-4" />
-          </Link>
+      {/* 5. CATEGORY-WISE PRODUCT SECTIONS (CATEGORY TITLE + PINNED 📌 PRODUCTS FIRST) */}
+      <section className="max-w-7xl mx-auto px-4 space-y-10">
+        <div className="flex flex-col items-center text-center space-y-2 py-2 border-t border-slate-200">
+          <div className="w-12 h-1 px-4 bg-[#00BFA5] rounded-full mb-1"></div>
+          <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span>ক্যাটাগরি ভিত্তিক কালেকশন</span>
+          </h2>
+          <p className="text-xs sm:text-sm font-semibold text-slate-500">
+            প্রতিটি ক্যাটাগরির পিন 📌 করা সেরা পণ্যসমূহ ও কালেকশন
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {loading ? (
-            Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-slate-200 rounded-2xl aspect-[3/4] animate-pulse" />
-            ))
-          ) : (
-            featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
-          )}
-        </div>
+        {loading ? (
+          <div className="space-y-8">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+                <div className="h-7 bg-slate-200 rounded-xl w-44 animate-pulse"></div>
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-slate-200 rounded-2xl aspect-[3/4] animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : categorySections.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+            <p className="text-slate-400 font-bold">বর্তমানে কোনো পণ্য পাওয়া যায়নি</p>
+          </div>
+        ) : (
+          categorySections.map((sec) => (
+            <div
+              key={sec.category.id}
+              className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4"
+            >
+              {/* Category Title Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00796B] shrink-0">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-xl font-extrabold text-slate-900 flex items-center gap-2 flex-wrap">
+                      <span>{sec.category.name}</span>
+                      {sec.pinnedCount > 0 && (
+                        <span className="text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs">
+                          <span>📌</span>
+                          <span>{sec.pinnedCount} টি পিন করা</span>
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                      মোট {sec.products.length} টি প্রোডাক্ট {sec.pinnedCount > 0 ? `(পিন 📌 করা সহ)` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to={`/products?category=${sec.category.slug || sec.category.id}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-[#00BFA5]/10 text-xs sm:text-sm font-bold text-[#00796B] hover:text-[#00BFA5] border border-slate-200 hover:border-[#00BFA5]/30 rounded-xl transition-all"
+                >
+                  <span>সবগুলো দেখুন</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              {/* Category Products Grid (Pin 📌 Products Listed First) */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
+                {sec.products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       {/* 6. PROMOTIONAL FREE DELIVERY BANNER */}
@@ -308,37 +437,6 @@ export const HomePage: React.FC = () => {
             ))
           )}
         </div>
-      </section>
-
-      {/* 8. JUST FOR YOU / ALL PRODUCTS MARKETPLACE GRID (Daraz Style) */}
-      <section className="max-w-7xl mx-auto px-4 space-y-6">
-        <div className="flex flex-col items-center text-center space-y-2 py-4 border-t border-slate-200">
-          <div className="w-12 h-1 px-4 bg-emerald-500 rounded-full mb-2"></div>
-          <h2 className="text-xl sm:text-3xl font-black text-slate-900 uppercase tracking-tight">
-            আপনার জন্য বিশেষ অফার
-          </h2>
-          <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">
-            Just For You — শপ করুন আপনার পছন্দের সব পণ্য
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-          {loading ? (
-            Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl aspect-[3/4] animate-pulse border border-slate-100" />
-            ))
-          ) : (
-            allProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
-          )}
-        </div>
-
-        {allProducts.length === 0 && !loading && (
-          <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-            <p className="text-slate-400 font-bold">বর্তমানে কোনো পণ্য পাওয়া যায়নি</p>
-          </div>
-        )}
       </section>
 
       {/* 9. REVIEWS SECTION */}

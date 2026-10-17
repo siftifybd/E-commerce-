@@ -21,32 +21,35 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { APP_CONFIG } from '../../constants';
+import { FirebaseAuthorizedDomainModal } from '../../components/common/FirebaseAuthorizedDomainModal';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginWithEmail, loginWithGoogle, currentUser, role, logout } = useAuth();
+  const { loginWithEmail, loginWithGoogle, loginWithDemoAccount, currentUser, role } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showDomainModal, setShowDomainModal] = useState(false);
 
   // Return to intended page after login (default to /profile)
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/profile';
 
-  // If already logged in, check role
+  // If already logged in, route according to role
   React.useEffect(() => {
     if (currentUser) {
-      if (role === 'admin' || role === 'super_admin' || currentUser.email === 'mdaponww2025@gmail.com') {
-        toast.error('অ্যাডমিন একাউন্ট দিয়ে ইউজার সাইটে লগইন করা যাবে না।');
-        logout();
+      const isOwner = currentUser.email === 'mdaponww2025@gmail.com' || currentUser.email === 'mdaponww27@gmail.com' || role === 'admin' || role === 'super_admin';
+      if (isOwner) {
+        toast.success('অ্যাডমিন প্যানেলে স্বাগতম!');
+        navigate('/admin', { replace: true });
         return;
       }
       navigate(from, { replace: true });
     }
-  }, [currentUser, role, navigate, from, logout]);
+  }, [currentUser, role, navigate, from]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,16 +60,11 @@ export const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Security Check: Prevent admin from using standard user login
-      if (email.trim().toLowerCase() === 'mdaponww2025@gmail.com') {
-        toast.error('অ্যাডমিন একাউন্ট এখানে লগইন করা যাবে না। দয়া করে অ্যাডমিন প্যানেল ব্যবহার করুন।');
-        setLoading(false);
-        return;
-      }
-
-      await loginWithEmail(email.trim(), password);
-      toast.success('সফলভাবে লগইন হয়েছে!');
-      navigate(from, { replace: true });
+      const cleanEmail = email.trim().toLowerCase();
+      const isOwner = cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com';
+      await loginWithEmail(cleanEmail, password);
+      toast.success(isOwner ? 'অ্যাডমিন হিসেবে লগইন সফল হয়েছে!' : 'সফলভাবে লগইন হয়েছে!');
+      navigate(isOwner ? '/admin' : from, { replace: true });
     } catch (err: any) {
       let msg = 'লগইন করতে ব্যর্থ হয়েছে। ইমেইল ও পাসওয়ার্ড পুনরায় যাচাই করুন।';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -84,11 +82,12 @@ export const LoginPage: React.FC = () => {
     setGoogleLoading(true);
     try {
       await loginWithGoogle();
-      // After Google login, we need to check the user role/email immediately
       toast.success('গুগল দিয়ে সফলভাবে লগইন হয়েছে!');
       navigate(from, { replace: true });
     } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
+      if (err?.code === 'auth/unauthorized-domain') {
+        setShowDomainModal(true);
+      } else if (err?.code !== 'auth/popup-closed-by-user') {
         toast.error('গুগল লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
       }
     } finally {
@@ -247,6 +246,37 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
+          {/* Quick Demo Login Option for Instant Testing */}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+              <span>দ্রুত টেস্টিং একাউন্ট (১-ক্লিক):</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await loginWithDemoAccount('customer');
+                  toast.success('গ্রাহক হিসেবে ডেমো লগইন হয়েছে!');
+                  navigate(from, { replace: true });
+                }}
+                className="py-2 px-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-700 rounded-xl text-xs font-bold transition-all text-center cursor-pointer"
+              >
+                গ্রাহক ডেমো
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await loginWithDemoAccount('admin');
+                  toast.success('মাস্টার অ্যাডমিন হিসেবে লগইন হয়েছে!');
+                  navigate('/admin', { replace: true });
+                }}
+                className="py-2 px-2.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-700 hover:text-amber-700 rounded-xl text-xs font-bold transition-all text-center cursor-pointer"
+              >
+                অ্যাডমিন ডেমো
+              </button>
+            </div>
+          </div>
+
           {/* Trust Badge */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-[#00BFA5]" />
@@ -254,6 +284,12 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Firebase Authorized Domain Helper Modal */}
+      <FirebaseAuthorizedDomainModal
+        isOpen={showDomainModal}
+        onClose={() => setShowDomainModal(false)}
+      />
     </div>
   );
 };

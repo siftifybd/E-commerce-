@@ -154,7 +154,7 @@ export const Header: React.FC = () => {
     }
   };
 
-  const currentSiteName = storeSettings?.siteName || 'BD STORE';
+  const currentSiteName = storeSettings?.siteName || 'Black Zone';
   const currentSiteLogo = storeSettings?.siteLogo || '/bd_store_logo.png';
   const currentPhone = storeSettings?.supportPhone || APP_CONFIG.supportPhone;
 

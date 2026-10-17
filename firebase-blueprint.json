@@ -130,6 +130,10 @@
           "type": "boolean",
           "description": "Flag for inclusion in flash sale countdown"
         },
+        "isPinned": {
+          "type": "boolean",
+          "description": "Flag for pinning product to top of category section on homepage"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

@@ -49,7 +49,7 @@ export const NotificationsPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'order' | 'promo'>('all');
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
 
-  const siteName = settings.siteName || 'BD STORE';
+  const siteName = settings.siteName || 'Black Zone';
   const siteLogo = settings.siteLogo || '/bd_store_logo.png';
 
   // Check device notification permission

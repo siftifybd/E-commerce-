@@ -14,7 +14,12 @@ import {
   PackageSearch,
   RotateCcw,
 } from 'lucide-react';
-import { fetchProducts, fetchCategories } from '../../services/products';
+import {
+  fetchProducts,
+  fetchCategories,
+  subscribeToProducts,
+  subscribeToCategories,
+} from '../../services/products';
 import { ProductCard } from '../../components/product/ProductCard';
 import { Product, Category, SortOption } from '../../types';
 import { APP_CONFIG, SORT_OPTIONS_LIST } from '../../constants';
@@ -54,20 +59,38 @@ export const ProductsPage: React.FC = () => {
     }
   }, [categoryParam, sortParam, flashSaleParam]);
 
+  // Real-time Firestore onSnapshot listeners
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
-        setCategories(cats);
+    setLoading(true);
+    let isMounted = true;
+
+    const unsubProds = subscribeToProducts(
+      (prods) => {
+        if (!isMounted) return;
         setProducts(prods);
-      } catch (err) {
-        console.error('Error fetching catalog:', err);
-      } finally {
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error in products subscription:', err);
         setLoading(false);
       }
+    );
+
+    const unsubCats = subscribeToCategories(
+      (cats) => {
+        if (!isMounted) return;
+        setCategories(cats);
+      },
+      (err) => {
+        console.error('Error in categories subscription:', err);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubProds();
+      unsubCats();
     };
-    loadData();
   }, []);
 
   // Filter and sort logic
@@ -167,14 +190,14 @@ export const ProductsPage: React.FC = () => {
       <Helmet>
         <title>
           {queryParam
-            ? `"${queryParam}" এর সার্চ রেজাল্ট — BD SHOPS`
+            ? `"${queryParam}" এর সার্চ রেজাল্ট — Black Zone`
             : activeCategoryName
-            ? `${activeCategoryName} — BD SHOPS`
-            : 'সকল পণ্য — BD SHOPS অনলাইন শপ'}
+            ? `${activeCategoryName} — Black Zone`
+            : 'সকল পণ্য — Black Zone অনলাইন শপ'}
         </title>
         <meta
           name="description"
-          content="BD SHOPS এর প্রিমিয়াম পণ্যের বিশাল সমাহার। পাঞ্জাবি, আতর, জায়নামাজ এবং আরও অনেক কিছু।"
+          content="Black Zone এর প্রিমিয়াম পণ্যের বিশাল সমাহার। পাঞ্জাবি, আতর, পোশাক, গ্যাজেট এবং আরও অনেক কিছু।"
         />
       </Helmet>
 

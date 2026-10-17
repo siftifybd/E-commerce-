@@ -27,7 +27,7 @@ export const Layout: React.FC = () => {
           <Power className="w-10 h-10 animate-pulse" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">
-          {storeSettings?.siteName || 'BD SHOPS'}
+          {storeSettings?.siteName || 'Black Zone'}
         </h1>
         <div className="max-w-md bg-slate-800/80 border border-slate-700 p-6 rounded-3xl text-sm text-slate-300 space-y-3">
           <p className="font-bold text-amber-400 flex items-center justify-center gap-2">

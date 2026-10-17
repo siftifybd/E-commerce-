@@ -272,7 +272,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleShareProduct = async () => {
     const shareData = {
-      title: `${product.name} — BD SHOPS`,
+      title: `${product.name} — Black Zone`,
       text: `${product.name} মাত্র ৳${product.price} এ অর্ডার করুন!`,
       url: window.location.href,
     };
@@ -398,7 +398,7 @@ export const ProductDetailPage: React.FC = () => {
   return (
     <div className="bg-[#F8FAFC] min-h-screen pb-24 md:pb-16 pt-3 sm:pt-5">
       <Helmet>
-        <title>{`${product.name} — BD SHOPS`}</title>
+        <title>{`${product.name} — Black Zone`}</title>
         <meta name="description" content={product.description?.slice(0, 150)} />
       </Helmet>
 
@@ -770,7 +770,7 @@ export const ProductDetailPage: React.FC = () => {
                   <div className="flex-1">
                     <p className="font-bold text-slate-800">১০০% আসল পণ্য</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      BD SHOPS এর প্রিমিয়াম অথেনটিক গ্যারান্টি।
+                      Black Zone এর প্রিমিয়াম অথেনটিক গ্যারান্টি।
                     </p>
                   </div>
                 </div>

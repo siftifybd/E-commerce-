@@ -6,16 +6,16 @@
 import { Coupon, OrderStatus, PaymentMethod } from '../types';
 
 export const APP_CONFIG = {
-  name: 'BD STORE',
+  name: 'Black Zone',
   logo: '/bd_store_logo.png',
   favicon: '/favicon.png',
-  tagline: 'বাংলাদেশের বিশ্বস্ত প্রিমিয়াম অনলাইন শপিং',
+  tagline: 'ব্ল্যাক জোন — বাংলাদেশের বিশ্বস্ত প্রিমিয়াম অনলাইন শপিং',
   currency: '৳',
   currencyCode: 'BDT',
   supportPhone: '01796983725',
   supportWhatsApp: '01796983725',
   whatsappNumber: '01796983725',
-  supportEmail: 'support@bdstore.com.bd',
+  supportEmail: 'support@blackzone.com.bd',
   workingHours: 'সকাল ৯টা - রাত ১০টা (প্রতিদিন)',
   deliveryCharges: {
     insideDhaka: 70,

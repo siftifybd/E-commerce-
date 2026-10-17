@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Search, ArrowRight, LayoutGrid, Sparkles } from 'lucide-react';
-import { fetchCategories } from '../../services/products';
+import { fetchCategories, subscribeToCategories } from '../../services/products';
 import { Category } from '../../types';
 
 export const CategoriesPage: React.FC = () => {
@@ -16,18 +16,23 @@ export const CategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchCategories();
+    setLoading(true);
+    let isMounted = true;
+    const unsub = subscribeToCategories(
+      (data) => {
+        if (!isMounted) return;
         setCategories(data);
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         console.error('Error loading categories:', err);
-      } finally {
         setLoading(false);
       }
+    );
+    return () => {
+      isMounted = false;
+      unsub();
     };
-    loadCategories();
   }, []);
 
   const filteredCategories = categories.filter((cat) => {
@@ -41,10 +46,10 @@ export const CategoriesPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-12">
       <Helmet>
-        <title>ক্যাটাগরিসমূহ — BD SHOPS অনলাইন শপ</title>
+        <title>ক্যাটাগরিসমূহ — Black Zone অনলাইন শপ</title>
         <meta
           name="description"
-          content="পাঞ্জাবি, আতর, জায়নামাজ ও ইসলামিক সামগ্রীর সকল ক্যাটাগরি ব্রাউজ করুন।"
+          content="Black Zone - সকল ক্যাটাগরির প্রিমিয়াম লাইফস্টাইল পণ্য ও সামগ্রী ব্রাউজ করুন।"
         />
       </Helmet>
 

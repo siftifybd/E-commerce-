@@ -1,6 +1,6 @@
 {
-  "short_name": "BD SHOPS",
-  "name": "BD SHOPS — বাংলাদেশের সেরা অনলাইন শপিং প্ল্যাটফর্ম",
+  "short_name": "Black Zone",
+  "name": "Black Zone — বাংলাদেশের সেরা অনলাইন শপিং প্ল্যাটফর্ম",
   "icons": [
     {
       "src": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=192&auto=format&fit=crop&q=80",
@@ -21,7 +21,7 @@
   "theme_color": "#00BFA5",
   "display": "standalone",
   "orientation": "portrait",
-  "description": "BD SHOPS — অনলাইন শপিং করুন সহজে, ক্যাশ অন ডেলিভারি ও দ্রুততম শিপিং এর সুবিধা সহ।",
+  "description": "Black Zone — অনলাইন শপিং করুন সহজে, ক্যাশ অন ডেলিভারি ও দ্রুততম শিপিং এর সুবিধা সহ।",
   "categories": ["shopping", "ecommerce", "lifestyle"],
   "lang": "bn-BD"
 }

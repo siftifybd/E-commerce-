@@ -25,11 +25,12 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { APP_CONFIG } from '../../constants';
 import { BD_ALL_DISTRICTS, getUpazilasForDistrict } from '../../constants/bangladeshData';
+import { FirebaseAuthorizedDomainModal } from '../../components/common/FirebaseAuthorizedDomainModal';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { registerWithEmail, loginWithGoogle, currentUser, role, logout, addUserAddress } = useAuth();
+  const { registerWithEmail, loginWithGoogle, currentUser, role, addUserAddress } = useAuth();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -44,20 +45,22 @@ export const RegisterPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showDomainModal, setShowDomainModal] = useState(false);
 
   // Return to intended page after signup (default to /profile)
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/profile';
 
   React.useEffect(() => {
     if (currentUser) {
-      if (role === 'admin' || role === 'super_admin' || currentUser.email === 'mdaponww2025@gmail.com') {
-        toast.error('অ্যাডমিন একাউন্ট দিয়ে ইউজার সাইটে রেজিস্ট্রেশন করা যাবে না।');
-        logout();
+      const isOwner = currentUser.email === 'mdaponww2025@gmail.com' || currentUser.email === 'mdaponww27@gmail.com' || role === 'admin' || role === 'super_admin';
+      if (isOwner) {
+        toast.success('অ্যাডমিন প্যানেলে স্বাগতম!');
+        navigate('/admin', { replace: true });
         return;
       }
       navigate(from, { replace: true });
     }
-  }, [currentUser, role, navigate, from, logout]);
+  }, [currentUser, role, navigate, from]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,8 +89,9 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     try {
       // Security Check: Prevent registering with admin email
-      if (email.trim().toLowerCase() === 'mdaponww2025@gmail.com') {
-        toast.error('এই ইমেইলটি অ্যাডমিন হিসেবে সংরক্ষিত। দয়া করে অন্য ইমেইল ব্যবহার করুন।');
+      const cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com') {
+        toast.error('এই ইমেইলটি অ্যাডমিন হিসেবে সংরক্ষিত। দয়া করে লগইন করুন।');
         setLoading(false);
         return;
       }
@@ -139,7 +143,9 @@ export const RegisterPage: React.FC = () => {
       toast.success('গুগল দিয়ে সফলভাবে একাউন্ট তৈরি হয়েছে!');
       navigate(from, { replace: true });
     } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
+      if (err?.code === 'auth/unauthorized-domain') {
+        setShowDomainModal(true);
+      } else if (err?.code !== 'auth/popup-closed-by-user') {
         toast.error('গুগল সাইন-আপ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
       }
     } finally {
@@ -452,6 +458,13 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Firebase Authorized Domain Helper Modal */}
+      <FirebaseAuthorizedDomainModal
+        isOpen={showDomainModal}
+        onClose={() => setShowDomainModal(false)}
+        title="গুগল সাইন-আপ ডোমেইন অথোরাইজেশন"
+      />
     </div>
   );
 };

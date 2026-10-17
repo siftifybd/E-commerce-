@@ -25,7 +25,7 @@ export const MobilePushNotificationBanner: React.FC = () => {
   const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isEnabled = settings.features?.notificationPopupEnabled !== false;
-  const siteName = settings.siteName || 'BD STORE';
+  const siteName = settings.siteName || 'Black Zone';
   const siteLogo = settings.siteLogo || '/bd_store_logo.png';
 
   // Listen for real-time notifications for the banner

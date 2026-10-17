@@ -11,7 +11,7 @@ const getInitialSettings = (): StoreSettings => {
     const cached = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_CACHE_KEY) : null;
     if (cached) {
       const parsed = JSON.parse(cached);
-      const siteName = parsed.siteName && parsed.siteName !== 'BD SHOPS' ? parsed.siteName : DEFAULT_STORE_SETTINGS.siteName;
+      const siteName = parsed.siteName && parsed.siteName !== 'BD SHOPS' && parsed.siteName !== 'BD STORE' ? parsed.siteName : DEFAULT_STORE_SETTINGS.siteName;
       const siteLogo = parsed.siteLogo || DEFAULT_STORE_SETTINGS.siteLogo;
       const favicon = parsed.favicon || DEFAULT_STORE_SETTINGS.favicon;
       return {
@@ -133,8 +133,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 5. Dynamic Document Title & Site Name Meta
     if (settings.siteName) {
       // If title is default or not customized per page, reflect store title dynamically
-      if (!document.title || document.title.includes('BD SHOPS') || document.title.includes(settings.siteName)) {
-        document.title = `${settings.siteName} — ${settings.siteName === 'BD SHOPS' ? 'অনলাইন শপিং মল' : 'Online Shopping'}`;
+      if (!document.title || document.title.includes('BD SHOPS') || document.title.includes('BD STORE') || document.title.includes('Black Zone') || document.title.includes(settings.siteName)) {
+        document.title = `${settings.siteName} — ${settings.siteName === 'Black Zone' ? 'অনলাইন শপিং মল' : 'Online Shopping'}`;
       }
       const metaOg = document.querySelector('meta[property="og:site_name"]');
       if (metaOg) metaOg.setAttribute('content', settings.siteName);
@@ -281,7 +281,7 @@ export function useContactSettings() {
     () => ({
       supportPhone: settings.supportPhone || '01796983725',
       whatsappNumber: settings.whatsappNumber || '01796983725',
-      supportEmail: settings.supportEmail || 'support@bdshops.com.bd',
+      supportEmail: settings.supportEmail || 'support@blackzone.com.bd',
       address: settings.address || 'ঢাকা, বাংলাদেশ',
       socialLinks: settings.socialLinks,
     }),
@@ -302,7 +302,7 @@ export function useBrandSettings() {
   const { settings } = useSettings();
   return useMemo(
     () => ({
-      siteName: settings.siteName || 'BD SHOPS',
+      siteName: settings.siteName || 'Black Zone',
       siteLogo: settings.siteLogo || '',
       favicon: settings.favicon || '',
       themeColor: settings.themeColor || '#ea580c',

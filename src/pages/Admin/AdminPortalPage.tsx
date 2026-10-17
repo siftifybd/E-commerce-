@@ -358,7 +358,7 @@ export const AdminPortalPage: React.FC = () => {
   const [newProdName, setNewProdName] = useState('');
   const [newProdCategory, setNewProdCategory] = useState('');
   const [newProdSubCategory, setNewProdSubCategory] = useState('');
-  const [newProdBrand, setNewProdBrand] = useState('BD SHOPS');
+  const [newProdBrand, setNewProdBrand] = useState('Black Zone');
   const [newProdSKU, setNewProdSKU] = useState('');
   const [newProdBarcode, setNewProdBarcode] = useState('');
   const [newProdVideoUrl, setNewProdVideoUrl] = useState('');
@@ -371,6 +371,7 @@ export const AdminPortalPage: React.FC = () => {
   const [newProdDescription, setNewProdDescription] = useState('');
   const [newProdIsFlashSale, setNewProdIsFlashSale] = useState(false);
   const [newProdIsFeatured, setNewProdIsFeatured] = useState(true);
+  const [newProdIsPinned, setNewProdIsPinned] = useState(false);
   const [uploadingProdImage, setUploadingProdImage] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState(false);
 
@@ -391,6 +392,7 @@ export const AdminPortalPage: React.FC = () => {
   const [editProdDescription, setEditProdDescription] = useState('');
   const [editProdIsFlashSale, setEditProdIsFlashSale] = useState(false);
   const [editProdIsFeatured, setEditProdIsFeatured] = useState(true);
+  const [editProdIsPinned, setEditProdIsPinned] = useState(false);
   const [uploadingEditProdImage, setUploadingEditProdImage] = useState(false);
   const [savingEditProduct, setSavingEditProduct] = useState(false);
 
@@ -420,7 +422,7 @@ export const AdminPortalPage: React.FC = () => {
 
     try {
       // 1. Check Master Passcode or Owner Direct Match
-      const isOwnerEmail = email === 'mdaponww2025@gmail.com' || email === 'admin' || email === 'admin@domain.com';
+      const isOwnerEmail = email === 'mdaponww2025@gmail.com' || email === 'mdaponww27@gmail.com' || email === 'admin' || email === 'admin@domain.com';
       const isMasterPass = pass === currentCode || pass === 'admin123' || pass === '7860';
 
       if (isOwnerEmail && isMasterPass) {
@@ -979,7 +981,7 @@ export const AdminPortalPage: React.FC = () => {
         categoryId: selectedCat?.id || 'cat_custom',
         categorySlug: selectedCat?.slug || 'all',
         subCategory: newProdSubCategory.trim(),
-        brand: newProdBrand.trim() || 'BD SHOPS',
+        brand: newProdBrand.trim() || 'Black Zone',
         sku: generatedSku,
         barcode: newProdBarcode.trim() || generatedSku,
         videoUrl: newProdVideoUrl.trim(),
@@ -988,11 +990,12 @@ export const AdminPortalPage: React.FC = () => {
         deliveryDays: newProdDeliveryDays.trim() || '২-৩ দিন',
         estimatedDeliveryTime: newProdDeliveryDays.trim() || '২-৩ দিন',
         stock: parseInt(newProdStock) || 50,
-        description: newProdDescription || 'প্রিমিয়াম কোয়ালিটি পণ্য। BD SHOPS-এর নির্ভরযোগ্য ডেলিভারি।',
+        description: newProdDescription || 'প্রিমিয়াম কোয়ালিটি পণ্য। Black Zone-এর নির্ভরযোগ্য ডেলিভারি।',
         rating: 5.0,
         reviewCount: 1,
         isFeatured: newProdIsFeatured,
         isFlashSale: newProdIsFlashSale,
+        isPinned: newProdIsPinned,
         approvalStatus: 'approved',
         verified: true,
         tags: [newProdCategory || 'General', 'New Arrival'],
@@ -1014,6 +1017,7 @@ export const AdminPortalPage: React.FC = () => {
       setNewProdBarcode('');
       setNewProdVideoUrl('');
       setNewProdSubCategory('');
+      setNewProdIsPinned(false);
 
       toast.success('নতুন পণ্য সফলভাবে স্টোরে যোগ হয়েছে!', { id: toastId });
     } catch (err) {
@@ -1030,7 +1034,7 @@ export const AdminPortalPage: React.FC = () => {
     setEditProdName(prod.name);
     setEditProdCategory(prod.categoryName || (categories[0]?.name || 'সাধারণ'));
     setEditProdSubCategory(prod.subCategory || '');
-    setEditProdBrand(prod.brand || 'BD SHOPS');
+    setEditProdBrand(prod.brand || 'Black Zone');
     setEditProdSKU(prod.sku || '');
     setEditProdBarcode(prod.barcode || '');
     setEditProdVideoUrl(prod.videoUrl || '');
@@ -1043,6 +1047,7 @@ export const AdminPortalPage: React.FC = () => {
     setEditProdDescription(prod.description || '');
     setEditProdIsFlashSale(prod.isFlashSale ?? false);
     setEditProdIsFeatured(prod.isFeatured ?? true);
+    setEditProdIsPinned(prod.isPinned ?? false);
     setIsEditProductOpen(true);
   };
 
@@ -1097,7 +1102,7 @@ export const AdminPortalPage: React.FC = () => {
         categoryId: selectedCat?.id || editingProduct.categoryId,
         categorySlug: selectedCat?.slug || editingProduct.categorySlug,
         subCategory: editProdSubCategory.trim(),
-        brand: editProdBrand.trim() || 'BD SHOPS',
+        brand: editProdBrand.trim() || 'Black Zone',
         sku: editProdSKU.trim() || editingProduct.sku,
         barcode: editProdBarcode.trim() || editingProduct.barcode,
         videoUrl: editProdVideoUrl.trim(),
@@ -1109,6 +1114,7 @@ export const AdminPortalPage: React.FC = () => {
         description: editProdDescription,
         isFlashSale: editProdIsFlashSale,
         isFeatured: editProdIsFeatured,
+        isPinned: editProdIsPinned,
         updatedAt: new Date().toISOString(),
       };
 
@@ -1122,6 +1128,22 @@ export const AdminPortalPage: React.FC = () => {
       toast.error('পণ্য আপডেট করতে সমস্যা হয়েছে', { id: toastId });
     } finally {
       setSavingEditProduct(false);
+    }
+  };
+
+  // Quick 1-Click Pin / Unpin Product in Category
+  const handleTogglePinProduct = async (productId: string, currentPinStatus: boolean) => {
+    try {
+      const newStatus = !currentPinStatus;
+      await updateDoc(doc(db, 'products', productId), {
+        isPinned: newStatus,
+        pinnedAt: newStatus ? new Date().toISOString() : null,
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success(newStatus ? '📌 পণ্যটি ক্যাটাগরিতে পিন করা হয়েছে!' : 'পণ্যটি আন-পিন করা হয়েছে');
+    } catch (err) {
+      console.error('Error toggling pin status:', err);
+      toast.error('পিন স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে');
     }
   };
 
@@ -1739,7 +1761,7 @@ export const AdminPortalPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center p-4">
         <Helmet>
-          <title>{portalMode === 'staff' ? 'কর্মী পোর্টাল প্রবেশ' : 'এডমিন প্রবেশ'} — {storeSettings.siteName || 'BD SHOPS'}</title>
+          <title>{portalMode === 'staff' ? 'কর্মী পোর্টাল প্রবেশ' : 'এডমিন প্রবেশ'} — {storeSettings.siteName || 'Black Zone'}</title>
         </Helmet>
 
         <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl text-white space-y-6">
@@ -1751,7 +1773,7 @@ export const AdminPortalPage: React.FC = () => {
                 <ShieldCheck className="w-7 h-7 text-white" />
               </div>
             )}
-            <h1 className="text-xl font-black tracking-tight">{storeSettings.siteName || 'BD SHOPS'} কন্ট্রোল সিস্টেম</h1>
+            <h1 className="text-xl font-black tracking-tight">{storeSettings.siteName || 'Black Zone'} কন্ট্রোল সিস্টেম</h1>
 
             {/* Mode Switcher Tabs */}
             <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-black/40 rounded-2xl border border-white/10 mt-3">
@@ -1935,7 +1957,7 @@ export const AdminPortalPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F1F5F9] text-slate-800 pb-28 md:pb-12">
       <Helmet>
-        <title>{storeSettings.siteName || 'BD SHOPS'} — অ্যাডমিন কন্ট্রোল প্যানেল</title>
+        <title>{storeSettings.siteName || 'Black Zone'} — অ্যাডমিন কন্ট্রোল প্যানেল</title>
       </Helmet>
 
       {/* TOP MASTER BAR */}
@@ -1956,7 +1978,7 @@ export const AdminPortalPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-slate-900 text-base tracking-tight">
-                  {storeSettings.siteName || 'BD SHOPS'}
+                  {storeSettings.siteName || 'Black Zone'}
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -3037,6 +3059,12 @@ export const AdminPortalPage: React.FC = () => {
                                     বাতিল
                                   </span>
                                 )}
+                                {prod.isPinned && (
+                                  <span className="text-[9px] font-black text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs">
+                                    <span>📌</span>
+                                    <span>পিন করা</span>
+                                  </span>
+                                )}
                               </div>
 
                               <h4 className="text-xs font-bold text-slate-900 truncate" title={prod.name}>
@@ -3065,6 +3093,19 @@ export const AdminPortalPage: React.FC = () => {
                             </span>
 
                             <div className="flex items-center gap-1.5">
+                              {/* 1-Click Pin / Unpin Button */}
+                              <button
+                                onClick={() => handleTogglePinProduct(prod.id, prod.isPinned ?? false)}
+                                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                                  prod.isPinned
+                                    ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 shadow-2xs'
+                                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                }`}
+                                title={prod.isPinned ? 'ক্যাটাগরি থেকে আন-পিন করুন' : 'ক্যাটাগরিতে পিন 📌 করুন'}
+                              >
+                                <span className="text-xs">📌</span>
+                              </button>
+
                               {isPending && (
                                 <>
                                   <button
@@ -3389,7 +3430,7 @@ export const AdminPortalPage: React.FC = () => {
                             value={storeSettings.siteName}
                             onChange={(e) => updateSettings({ siteName: e.target.value })}
                             className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
-                            placeholder="e.g. BD SHOPS"
+                            placeholder="e.g. Black Zone"
                           />
                         </div>
 
@@ -5339,6 +5380,23 @@ export const AdminPortalPage: React.FC = () => {
                 ></textarea>
               </div>
 
+              {/* Pin Product to Category 📌 */}
+              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📌</span>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">ক্যাটাগরিতে পিন করুন (Pin Product)</h5>
+                    <p className="text-[10px] text-slate-500">হোমপেজে এই ক্যাটাগরির সেকশনের শুরুতে অগ্রাধিকার পাবে</p>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={newProdIsPinned}
+                  onChange={(e) => setNewProdIsPinned(e.target.checked)}
+                  className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -5546,6 +5604,23 @@ export const AdminPortalPage: React.FC = () => {
                   rows={3}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
                 ></textarea>
+              </div>
+
+              {/* Pin Product to Category 📌 */}
+              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📌</span>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">ক্যাটাগরিতে পিন করুন (Pin Product)</h5>
+                    <p className="text-[10px] text-slate-500">হোমপেজে এই ক্যাটাগরির সেকশনের শুরুতে অগ্রাধিকার পাবে</p>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={editProdIsPinned}
+                  onChange={(e) => setEditProdIsPinned(e.target.checked)}
+                  className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

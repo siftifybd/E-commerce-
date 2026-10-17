@@ -180,6 +180,8 @@ export interface Product {
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   isFlashSale?: boolean;
+  isPinned?: boolean;
+  pinnedAt?: string;
   approvalStatus?: 'approved' | 'pending' | 'rejected';
   rejectionReason?: string;
   verified?: boolean;

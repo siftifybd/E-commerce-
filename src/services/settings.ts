@@ -253,7 +253,7 @@ export const DEFAULT_FEATURE_TOGGLES: FeatureToggles = {
     }
   ],
   floatingWhatsAppEnabled: true,
-  whatsappMessage: 'আসসালামু আলাইকুম! BD SHOPS এ আপনাকে স্বাগতম। কীভাবে সহযোগিতা করতে পারি?',
+  whatsappMessage: 'আসসালামু আলাইকুম! Black Zone এ আপনাকে স্বাগতম। কীভাবে সহযোগিতা করতে পারি?',
   whatsappTooltipText: 'আসসালামু আলাইকুম! সরাসরি হোয়াটস্অ্যাপে অর্ডার করতে এখানে ক্লিক করুন।',
   whatsappTooltipDelay: 5,
   whatsappIcon: '',
@@ -341,7 +341,7 @@ export const DEFAULT_FEATURE_TOGGLES: FeatureToggles = {
 };
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
-  siteName: 'BD STORE',
+  siteName: 'Black Zone',
   siteLogo: '/bd_store_logo.png',
   favicon: '/favicon.png',
   themeMode: 'light',
@@ -358,15 +358,15 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     whatsapp: 'https://wa.me/8801796983725',
   },
   emailSettings: {
-    adminEmail: 'admin@bdstore.com.bd',
-    orderNotificationEmail: 'orders@bdstore.com.bd',
-    smtpHost: 'smtp.bdstore.com.bd',
+    adminEmail: 'admin@blackzone.com.bd',
+    orderNotificationEmail: 'orders@blackzone.com.bd',
+    smtpHost: 'smtp.blackzone.com.bd',
   },
   smsSettings: {
     enabled: true,
     provider: 'Greenweb SMS',
     apiKey: '',
-    senderId: 'BDSTORE',
+    senderId: 'BLACKZONE',
   },
   taxSettings: {
     enabled: false,
@@ -377,7 +377,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   maintenanceNotice: 'ওয়েবসাইট মেইনটেন্যান্স বা সাময়িক উন্নয়নের কাজ চলছে। কিছুক্ষণের মধ্যে আবার চালু হবে।',
   whatsappNumber: '01796983725',
   supportPhone: '01796983725',
-  supportEmail: 'support@bdstore.com.bd',
+  supportEmail: 'support@blackzone.com.bd',
   payments: DEFAULT_PAYMENT_SETTINGS,
   features: DEFAULT_FEATURE_TOGGLES,
   customPages: [],

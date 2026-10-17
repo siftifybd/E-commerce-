@@ -642,7 +642,7 @@ export async function bulkUploadProductsToFirestore(productsList: Partial<Produc
         stock: item.stock ?? 10,
         sku: item.sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
         barcode: item.barcode || '',
-        brand: item.brand || 'BD SHOPS',
+        brand: item.brand || 'Black Zone',
         categoryId: item.categoryId || 'cat_mens_fashion',
         categoryName: item.categoryName || 'পুরুষদের ফ্যাশন',
         subCategory: item.subCategory || '',
@@ -686,4 +686,148 @@ export async function bulkUpdateProductsInFirestore(updates: { id: string; price
     }
   }
   return updatedCount;
+}
+
+function cleanUndefined<T>(obj: T): T {
+  if (obj === null || obj === undefined) return null as any;
+  if (Array.isArray(obj)) return obj.map(cleanUndefined) as any;
+  if (typeof obj === 'object') {
+    const res: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined) res[k] = cleanUndefined(v);
+    }
+    return res as T;
+  }
+  return obj;
+}
+
+/**
+ * Real-time listener for products collection in Firestore.
+ * Automatically pushes updates whenever products are added, edited, deleted, or pinned.
+ */
+export function subscribeToProducts(
+  onUpdate: (products: Product[]) => void,
+  onError?: (error: any) => void
+): Unsubscribe {
+  const prodRef = collection(db, 'products');
+  return onSnapshot(
+    prodRef,
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const prods = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Product[];
+        onUpdate(prods);
+      } else {
+        onUpdate(MOCK_PRODUCTS);
+      }
+    },
+    (err) => {
+      console.warn('Products subscription fallback error:', err);
+      if (onError) onError(err);
+    }
+  );
+}
+
+/**
+ * Save / Create Product in Firestore
+ */
+export async function saveProductInFirestore(productData: Partial<Product>): Promise<Product> {
+  const prodId = productData.id || `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const slug = productData.slug || (productData.name
+    ? productData.name
+        .toLowerCase()
+        .replace(/[^\w\u0980-\u09FF]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    : `product-${Date.now()}`);
+
+  const productToSave: Product = {
+    id: prodId,
+    name: productData.name || 'নতুন পণ্য',
+    slug,
+    categoryId: productData.categoryId || 'cat_mens_fashion',
+    categoryName: productData.categoryName || 'পুরুষদের ফ্যাশন',
+    brand: productData.brand || 'Black Zone',
+    price: Number(productData.price) || 0,
+    compareAtPrice: productData.compareAtPrice ? Number(productData.compareAtPrice) : 0,
+    costPrice: productData.costPrice ? Number(productData.costPrice) : 0,
+    stock: productData.stock !== undefined ? Number(productData.stock) : 50,
+    stockStatus: (Number(productData.stock) <= 0) ? 'out_of_stock' : 'in_stock',
+    sku: productData.sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+    image: productData.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop',
+    images: productData.images && productData.images.length > 0 ? productData.images : [productData.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop'],
+    description: productData.description || 'ব্ল্যাক জোন প্রিমিয়াম কোয়ালিটি পণ্য। নির্ভরযোগ্য ডেলিভারি ও ১০০% অরিজিনাল।',
+    rating: productData.rating || 5,
+    reviewCount: productData.reviewCount || 1,
+    isFeatured: productData.isFeatured ?? false,
+    isFlashSale: productData.isFlashSale ?? false,
+    isPinned: productData.isPinned ?? false,
+    pinnedAt: productData.isPinned ? (productData.pinnedAt || new Date().toISOString()) : undefined,
+    approvalStatus: productData.approvalStatus || 'approved',
+    verified: true,
+    tags: productData.tags || [],
+    sizes: productData.sizes || [],
+    colors: productData.colors || [],
+    createdAt: productData.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const docRef = doc(db, 'products', prodId);
+    await setDoc(docRef, cleanUndefined(productToSave), { merge: true });
+    return productToSave;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `products/${prodId}`);
+    throw err;
+  }
+}
+
+/**
+ * Update an existing Product in Firestore
+ */
+export async function updateProductInFirestore(productId: string, updateData: Partial<Product>): Promise<void> {
+  try {
+    const docRef = doc(db, 'products', productId);
+    const cleaned = cleanUndefined({
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+    });
+    await updateDoc(docRef, cleaned);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `products/${productId}`);
+    throw err;
+  }
+}
+
+/**
+ * Delete a product from Firestore
+ */
+export async function deleteProductFromFirestore(productId: string): Promise<void> {
+  try {
+    const docRef = doc(db, 'products', productId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, `products/${productId}`);
+    throw err;
+  }
+}
+
+/**
+ * Toggle Pin 📌 product in Category (persisted permanently in Firestore)
+ */
+export async function toggleProductPinInFirestore(productId: string, currentPinStatus: boolean): Promise<boolean> {
+  const newStatus = !currentPinStatus;
+  try {
+    const docRef = doc(db, 'products', productId);
+    await updateDoc(docRef, {
+      isPinned: newStatus,
+      pinnedAt: newStatus ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
+    });
+    return newStatus;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `products/${productId}`);
+    throw err;
+  }
 }

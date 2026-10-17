@@ -211,7 +211,7 @@ export const CartPage: React.FC = () => {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <Helmet>
-          <title>শপিং কার্ট খালি — BD SHOPS</title>
+          <title>শপিং কার্ট খালি — Black Zone</title>
         </Helmet>
         <div className="max-w-md w-full text-center bg-white rounded-3xl p-8 border border-slate-200/80 shadow-xs space-y-4">
           <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
@@ -235,7 +235,7 @@ export const CartPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-28 md:pb-16 bg-[#F8FAFC]">
       <Helmet>
-        <title>{`শপিং কার্ট (${items.length}) — BD SHOPS`}</title>
+        <title>{`শপিং কার্ট (${items.length}) — Black Zone`}</title>
       </Helmet>
 
       {/* Top Banner */}

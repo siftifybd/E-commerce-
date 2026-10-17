@@ -273,16 +273,16 @@ export async function verifyStaffLogin(usernameOrEmail: string, password: string
   const cleanPass = (password || '').trim();
 
   // 1. Direct Master Admin Bypass / Auto-grant
-  const isMasterUser = cleanInput === 'mdaponww2025@gmail.com' || cleanInput === 'admin' || cleanInput === 'mdapon';
+  const isMasterUser = cleanInput === 'mdaponww2025@gmail.com' || cleanInput === 'mdaponww27@gmail.com' || cleanInput === 'admin' || cleanInput === 'mdapon';
   const isMasterPass = cleanPass === 'admin123' || cleanPass === '7860';
 
   if (isMasterUser && isMasterPass) {
     const masterAdmin: StaffAccount = {
       id: 'admin_master_owner',
-      username: cleanInput === 'mdaponww2025@gmail.com' ? 'mdapon' : cleanInput,
+      username: cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput,
       password: cleanPass,
-      fullName: 'Master Admin (mdaponww2025@gmail.com)',
-      email: 'mdaponww2025@gmail.com',
+      fullName: `Master Admin (${cleanInput})`,
+      email: cleanInput.includes('@') ? cleanInput : 'mdaponww27@gmail.com',
       phone: '01700000000',
       role: 'super_admin',
       isActive: true,

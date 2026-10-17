@@ -47,7 +47,7 @@ export const PWAInstallPrompt: React.FC = () => {
           <Smartphone className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="text-xs font-bold text-slate-900">BD SHOPS অ্যাপ ইনস্টল করুন</h4>
+          <h4 className="text-xs font-bold text-slate-900">Black Zone অ্যাপ ইনস্টল করুন</h4>
           <p className="text-[11px] text-slate-500">দ্রুত শপিং ও অফলাইন এক্সেসের জন্য ইনস্টল করুন</p>
         </div>
       </div>

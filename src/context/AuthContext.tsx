@@ -31,6 +31,7 @@ interface AuthContextType {
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
+  loginWithDemoAccount: (targetRole?: 'customer' | 'admin') => Promise<void>;
   registerWithEmail: (email: string, pass: string, name: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -63,7 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ignore parse errors
     }
 
-    const isOwner = (email?: string | null) => (email || '').toLowerCase().trim() === 'mdaponww2025@gmail.com';
+    const isOwner = (email?: string | null) => {
+      const clean = (email || '').toLowerCase().trim();
+      return clean === 'mdaponww2025@gmail.com' || clean === 'mdaponww27@gmail.com';
+    };
     const effectiveRole: Role = isOwner(user.email) ? 'super_admin' : 'customer';
 
     const defaultProfile: UserProfile = cachedProfile || {
@@ -140,14 +144,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
+        setCurrentUser(user);
         try {
           await syncUserProfile(user);
         } catch (err) {
           console.warn('Error fetching user profile:', err);
         }
       } else {
+        // Fallback for active demo session in preview environment
+        const demoUid = typeof window !== 'undefined' ? localStorage.getItem('bdshops_active_demo_uid') : null;
+        if (demoUid) {
+          try {
+            const raw = localStorage.getItem(`bdshops_user_profile_${demoUid}`);
+            if (raw) {
+              const p = JSON.parse(raw);
+              setUserProfile(p);
+              setCurrentUser({
+                uid: demoUid,
+                email: p.email,
+                displayName: p.displayName,
+                emailVerified: true,
+                isAnonymous: false,
+              } as unknown as User);
+              setLoading(false);
+              return;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+        setCurrentUser(null);
         setUserProfile(null);
       }
       setLoading(false);
@@ -156,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // 1-Click Google Login
+  // 1-Click Google Login with graceful unauthorized-domain detection
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
@@ -164,9 +191,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (result.user) {
         await syncUserProfile(result.user);
       }
-    } catch (error) {
-      console.error('Google Sign In Error:', error);
+    } catch (error: any) {
+      if (error?.code === 'auth/unauthorized-domain') {
+        const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+        console.warn(
+          `[Firebase Auth] Domain '${domain}' is not in Authorized Domains list for project 'telecom-18f17'.\n` +
+          `To authorize, visit Firebase Console -> Authentication -> Settings -> Authorized domains.`
+        );
+      } else if (error?.code !== 'auth/popup-closed-by-user') {
+        console.error('Google Sign In Error:', error);
+      }
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1-Click Demo Account Login (Fast testing for preview environments or when Google OAuth domain is pending)
+  const loginWithDemoAccount = async (targetRole: 'customer' | 'admin' = 'customer') => {
+    setLoading(true);
+    try {
+      const isMaster = targetRole === 'admin';
+      const email = isMaster ? 'mdaponww27@gmail.com' : 'customer@bdshops.demo';
+      const demoUid = isMaster ? 'admin_demo_mdapon' : 'customer_demo_user';
+      const name = isMaster ? 'মাস্টার অ্যাডমিন' : 'সম্মানিত গ্রাহক (ডেমো)';
+
+      const demoProfile: UserProfile = {
+        uid: demoUid,
+        email,
+        displayName: name,
+        phoneNumber: '01700000000',
+        photoURL: '',
+        role: isMaster ? 'super_admin' : 'customer',
+        addresses: [
+          {
+            id: 'addr_demo_1',
+            fullName: name,
+            phone: '01700000000',
+            district: 'ঢাকা',
+            streetAddress: 'মিরপুর ১০, ঢাকা',
+            isDefault: true,
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockUser = {
+        uid: demoUid,
+        email,
+        displayName: name,
+        emailVerified: true,
+        isAnonymous: false,
+      } as unknown as User;
+
+      setCurrentUser(mockUser);
+      setUserProfile(demoProfile);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`bdshops_user_profile_${demoUid}`, JSON.stringify(demoProfile));
+        localStorage.setItem('bdshops_active_demo_uid', demoUid);
+        if (isMaster) {
+          sessionStorage.setItem('bdshops_admin_auth', 'true');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -195,14 +282,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await createUserWithEmailAndPassword(auth, email, pass);
       if (result.user) {
         await updateFirebaseProfile(result.user, { displayName: name });
-        const isOwner = email.toLowerCase().trim() === 'mdaponww2025@gmail.com';
+        const cleanEmail = email.toLowerCase().trim();
+        const isOwnerUser = cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com';
         const newProfile: UserProfile = {
           uid: result.user.uid,
           email,
           displayName: name,
           phoneNumber: phone || '',
           photoURL: '',
-          role: isOwner ? 'super_admin' : 'customer',
+          role: isOwnerUser ? 'super_admin' : 'customer',
           addresses: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -243,11 +331,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserProfile(null);
 
     // 2. Clear relevant localStorage cached auth tokens/profiles
-    if (uid) {
-      try {
-        localStorage.removeItem(`bdshops_user_profile_${uid}`);
-      } catch {
-        // Ignore
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('bdshops_active_demo_uid');
+      if (uid) {
+        try {
+          localStorage.removeItem(`bdshops_user_profile_${uid}`);
+        } catch {
+          // Ignore
+        }
       }
     }
 
@@ -370,6 +461,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         loginWithGoogle,
         loginWithEmail,
+        loginWithDemoAccount,
         registerWithEmail,
         logout,
         resetPassword,

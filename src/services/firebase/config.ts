@@ -106,3 +106,7 @@ export async function testConnection(): Promise<boolean> {
     return false;
   }
 }
+
+// Automatically test Firestore connection on initial boot
+testConnection().catch(() => {});
+
