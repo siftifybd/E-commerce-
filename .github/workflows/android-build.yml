@@ -20,6 +20,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            android-app/package-lock.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -29,17 +33,27 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
+      - name: Verify Android Project Exists
+        run: |
+          if [ ! -d "android-app/android" ]; then
+            echo "Error: Android project directory (android-app/android) is missing!"
+            exit 1
+          fi
 
       - name: Install Node Dependencies
-        working-directory: ./android-app
-        run: npm install
+        run: |
+          npm install
+          cd android-app && npm install
 
       - name: Copy google-services.json to Android Project
         run: |
           mkdir -p android-app/android/app
           if [ -f "public/assets/aistudio/google-services__1__81809dba.json" ]; then
             cp public/assets/aistudio/google-services__1__81809dba.json android-app/android/app/google-services.json
-            echo "Successfully copied google-services.json to android/app/"
+            echo "Successfully copied google-services.json to android-app/android/app/"
           else
             echo "google-services.json source not found!"
           fi
@@ -57,4 +71,4 @@ jobs:
           path: |
             android-app/android/app/build/outputs/apk/release/*.apk
             android-app/android/app/build/outputs/apk/**/*.apk
-          if-no-files-found: ignore
+          if-no-files-found: error
