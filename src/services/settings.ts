@@ -345,7 +345,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   siteLogo: '/bd_store_logo.png',
   favicon: '/favicon.png',
   themeMode: 'light',
-  themeColor: '#00BFA5',
+  themeColor: '#f97316',
   currencySymbol: '৳',
   currencyCode: 'BDT',
   language: 'bn',
@@ -391,7 +391,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     enabled: true,
     style: 'modern',
     bgColor: '#ffffff',
-    activeColor: '#00BFA5',
+    activeColor: '#f97316',
     inactiveColor: '#64748b',
     showLabels: true,
     buttons: [
