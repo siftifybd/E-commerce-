@@ -29,6 +29,7 @@ import {
 } from '../../services/orders';
 import { Order, OrderStatus } from '../../types';
 import { APP_CONFIG } from '../../constants';
+import { useSettings } from '../../context/SettingsContext';
 
 const TIMELINE_STAGES: { status: OrderStatus; label: string; desc: string }[] = [
   { status: 'pending', label: 'অর্ডার গৃহীত', desc: 'অর্ডার যাচাই করা হচ্ছে' },
@@ -39,6 +40,7 @@ const TIMELINE_STAGES: { status: OrderStatus; label: string; desc: string }[] = 
 ];
 
 export const TrackOrderPage: React.FC = () => {
+  const { settings } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || searchParams.get('id') || searchParams.get('orderId') || '';
 
@@ -158,7 +160,7 @@ export const TrackOrderPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-16 pt-6 px-4 bg-[#F8FAFC]">
       <Helmet>
-        <title>লাইভ অর্ডার ট্র্যাকিং ও ডেলিভারির সময় — BD SHOPS</title>
+        <title>লাইভ অর্ডার ট্র্যাকিং ও ডেলিভারির সময় — {settings.siteName || APP_CONFIG.name || 'Black Zone'}</title>
         <meta
           name="description"
           content="আপনার অর্ডার আইডি দিয়ে সরাসরি ফায়ারস্টোর থেকে রিয়েল-টাইম শিপিং স্ট্যাটাস ও সম্ভাব্য ডেলিভারির সময় ট্র্যাক করুন।"

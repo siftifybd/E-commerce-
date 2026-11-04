@@ -126,12 +126,13 @@ import { Order, OrderStatus, Product, Category, StaffAccount, Role, Coupon } fro
 import { fetchCoupons, saveCoupon, deleteCoupon } from '../../services/coupons';
 import { FinancialDashboard } from '../../components/admin/FinancialDashboard';
 import { UserManagement } from '../../components/admin/UserManagement';
+import { verifyIsAdmin, suspendUserDueToAdminBreach } from '../../services/adminAuth';
 
 export const AdminPortalPage: React.FC = () => {
   const navigate = useNavigate();
   const { role, loginWithEmail, currentUser, logout } = useAuth();
 
-  const { settings: storeSettings, loading: settingsLoading, updateSettings } = useSettings();
+  const { settings: storeSettings, loading: settingsLoading, updateSettings, saveSettings } = useSettings();
 
   // Authentication & Passcode protection
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
@@ -418,29 +419,51 @@ export const AdminPortalPage: React.FC = () => {
     }
 
     setIsLoginLoading(true);
-    const toastId = toast.loading('অ্যাডমিন পরিচয় যাচাই করা হচ্ছে...');
+    const toastId = toast.loading('অ্যাডমিন পরিচয় ও নিরাপত্তা যাচাই করা হচ্ছে...');
 
     try {
-      // 1. Check Master Passcode or Owner Direct Match
-      const isOwnerEmail = email === 'mdaponww2025@gmail.com' || email === 'mdaponww27@gmail.com' || email === 'admin' || email === 'admin@domain.com';
+      const cleanEmail = email.toLowerCase().trim();
+
+      // STRICT ROLE VERIFICATION: Only Admin emails can touch /admin!
+      const isSuperOwner = cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com' || cleanEmail === 'admin' || cleanEmail === 'admin@domain.com';
       const isMasterPass = pass === currentCode || pass === 'admin123' || pass === '7860';
 
-      if (isOwnerEmail && isMasterPass) {
+      // 1. Check in Staff Accounts collection for role 'admin' or 'super_admin'
+      const foundStaff = staffAccounts.find(
+        (s) =>
+          (s.username.toLowerCase() === cleanEmail || (s.email && s.email.toLowerCase() === cleanEmail)) &&
+          s.password === pass &&
+          s.isActive
+      );
+
+      // 2. Check if this is a verified Admin
+      const hasAdminRights = isSuperOwner || !!foundStaff || (await verifyIsAdmin(cleanEmail));
+
+      if (!hasAdminRights) {
+        // AUTOMATED INTRUSION RESPONSE:
+        // When any customer/non-admin attempts to login to /admin, suspend & ban their account immediately!
+        const breachResult = await suspendUserDueToAdminBreach(cleanEmail);
+        if (breachResult.wasSuspended) {
+          toast.error(
+            `⛔ অননুমোদিত অনুপ্রবেশ সতর্কতা! সাধারণ ইউজার অ্যাকাউন্ট (${cleanEmail}) দিয়ে অ্যাডমিন প্যানেলে প্রবেশের চেষ্টার কারণে অ্যাকাউন্টটি অবিলম্বে স্থায়ীভাবে সাসপেন্ড ও ব্যান করা হলো।`,
+            { id: toastId, duration: 8000 }
+          );
+        } else {
+          toast.error('অননুমোদিত প্রবেশাধিকার কঠোরভাবে নিষিদ্ধ! শুধু অনুমোদিত অ্যাডমিনরাই প্রবেশ করতে পারেন।', { id: toastId });
+        }
+        return;
+      }
+
+      // If authorized admin with direct owner master passcode
+      if (isSuperOwner && isMasterPass) {
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('bdshops_admin_auth', 'true');
         toast.success('মাস্টার অ্যাডমিন লগইন সফল হয়েছে!', { id: toastId });
         return;
       }
 
-      // 2. Check in Staff Accounts collection (for custom created Admins / Super Admins)
-      const foundStaff = staffAccounts.find(
-        (s) =>
-          (s.username.toLowerCase() === email || (s.email && s.email.toLowerCase() === email)) &&
-          s.password === pass &&
-          s.isActive
-      );
-
-      if (foundStaff) {
+      // If authorized staff admin
+      if (foundStaff && (foundStaff.role === 'admin' || foundStaff.role === 'super_admin')) {
         setStaffUser(foundStaff);
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('bdshops_admin_auth', 'true');
@@ -449,15 +472,14 @@ export const AdminPortalPage: React.FC = () => {
         return;
       }
 
-      // 3. Try Firebase Auth Login
+      // 3. Try Firebase Auth Login for Admin
       try {
-        await loginWithEmail(email, pass);
+        await loginWithEmail(cleanEmail, pass);
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('bdshops_admin_auth', 'true');
         toast.success('ফায়ারবেস অ্যাডমিন লগইন সফল!', { id: toastId });
         return;
       } catch (fbErr: any) {
-        // If master passcode matches regardless of email
         if (isMasterPass) {
           setIsAdminAuthenticated(true);
           sessionStorage.setItem('bdshops_admin_auth', 'true');
@@ -466,7 +488,7 @@ export const AdminPortalPage: React.FC = () => {
         }
 
         console.warn('Firebase login attempt:', fbErr);
-        toast.error('ভুল ইমেইল/ইউজারনেম বা পাসওয়ার্ড! সঠিক তথ্য দিন।', { id: toastId });
+        toast.error('ভুল অ্যাডমিন ইমেইল অথবা পাসওয়ার্ড! সঠিক তথ্য দিন।', { id: toastId });
       }
     } catch (err: any) {
       console.error('Admin login error:', err);
@@ -747,12 +769,12 @@ export const AdminPortalPage: React.FC = () => {
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
     setSavingSettings(true);
     const toastId = toast.loading('সেটিংস সেভ হচ্ছে...');
     try {
-      await saveStoreSettingsInFirestore(storeSettings);
+      await saveSettings(storeSettings);
       toast.success('সাইটের সকল সেটিংস সফলভাবে সেভ হয়েছে!', { id: toastId });
     } catch (err) {
       console.error('Save settings error:', err);
@@ -2025,12 +2047,10 @@ export const AdminPortalPage: React.FC = () => {
             {/* Live User Site Link */}
             <Link
               to="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-[#00BFA5]" />
-              <span className="hidden xs:inline">ইউজার সাইট</span>
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+              <span>🛍️ ইউজার সাইট</span>
             </Link>
 
             {/* Store Maintenance Toggle Quick Button */}
@@ -3504,6 +3524,23 @@ export const AdminPortalPage: React.FC = () => {
                               />
                            </div>
                         </div>
+
+                        {/* Direct 1-Click Save for Branding */}
+                        <div className="pt-2 flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveSettings()}
+                            disabled={savingSettings}
+                            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-amber-500/25 transition-transform active:scale-95 disabled:opacity-60 flex items-center gap-2 cursor-pointer"
+                          >
+                            {savingSettings ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Save className="w-4 h-4" />
+                            )}
+                            <span>নাম ও ব্র্যান্ডিং সেভ করুন</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* 2. Theme & Appearance (Light/Dark Mode, Language & Currency) */}
@@ -3612,7 +3649,7 @@ export const AdminPortalPage: React.FC = () => {
                                 value={storeSettings.supportEmail}
                                 onChange={(e) => updateSettings({ supportEmail: e.target.value })}
                                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold"
-                                placeholder="support@bdshops.com"
+                                placeholder="support@blackzone.com.bd"
                               />
                            </div>
 
@@ -3755,7 +3792,7 @@ export const AdminPortalPage: React.FC = () => {
                                     value={storeSettings.smsSettings?.senderId || ''}
                                     onChange={(e) => updateSettings({ smsSettings: { ...storeSettings.smsSettings, senderId: e.target.value } })}
                                     className="w-full px-4 py-2 bg-white border border-cyan-200 rounded-xl text-xs font-bold"
-                                    placeholder="e.g. BDSHOPS"
+                                    placeholder="e.g. BLACKZONE"
                                   />
                                 </div>
                               </div>

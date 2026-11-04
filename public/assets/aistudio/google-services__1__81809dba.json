@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "57254397387",
+    "firebase_url": "https://black-zone-shops-default-rtdb.firebaseio.com",
+    "project_id": "black-zone-shops",
+    "storage_bucket": "black-zone-shops.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57254397387:android:158aa636d801d3bf13a24e",
+        "android_client_info": {
+          "package_name": "com.black.zone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "57254397387-m5uljfe2b1r0h4kf33l7j444pvuhfc74.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX2SMV8c9QRLA1IwZZbMx0mfbHzrQG2Oo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "57254397387-m5uljfe2b1r0h4kf33l7j444pvuhfc74.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

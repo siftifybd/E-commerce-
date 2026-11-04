@@ -22,6 +22,7 @@ import {
   ArrowRight,
   MessageSquare,
   Home,
+  ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';

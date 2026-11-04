@@ -1,13 +1,11 @@
 /**
- * BD SHOPS — Firebase Authorized Domain Helper Modal
- * Explains how to add the current preview domain to Firebase Console
- * and provides 1-click fallback demo login so testing is never blocked.
+ * Black Zone — Firebase Authorized Domain Helper Modal
+ * Explains how to add the current preview domain to Firebase Console.
  */
 
 import React, { useState } from 'react';
-import { ExternalLink, Copy, Check, ShieldAlert, Sparkles, X, UserCheck, Shield } from 'lucide-react';
+import { ExternalLink, Copy, Check, ShieldAlert, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
@@ -21,15 +19,13 @@ export const FirebaseAuthorizedDomainModal: React.FC<Props> = ({
   onClose,
   title = 'গুগল সাইন-ইন ডোমেইন অথোরাইজেশন',
 }) => {
-  const { loginWithDemoAccount } = useAuth();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'run.app';
-  const firebaseSettingsUrl = 'https://console.firebase.google.com/project/telecom-18f17/authentication/settings';
+  const firebaseSettingsUrl = 'https://console.firebase.google.com/project/black-zone-shops/authentication/settings';
 
   const handleCopy = () => {
     if (navigator.clipboard) {
@@ -37,34 +33,6 @@ export const FirebaseAuthorizedDomainModal: React.FC<Props> = ({
       setCopied(true);
       toast.success('ডোমেইন কপি করা হয়েছে!');
       setTimeout(() => setCopied(false), 2500);
-    }
-  };
-
-  const handleDemoCustomerLogin = async () => {
-    setDemoLoading(true);
-    try {
-      await loginWithDemoAccount('customer');
-      toast.success('গ্রাহক একাউন্টে সফলভাবে লগইন হয়েছে!');
-      onClose();
-      navigate('/profile', { replace: true });
-    } catch {
-      toast.error('ডেমো লগইনে সমস্যা হয়েছে');
-    } finally {
-      setDemoLoading(false);
-    }
-  };
-
-  const handleDemoAdminLogin = async () => {
-    setDemoLoading(true);
-    try {
-      await loginWithDemoAccount('admin');
-      toast.success('মাস্টার অ্যাডমিন হিসেবে সফলভাবে লগইন হয়েছে!');
-      onClose();
-      navigate('/admin', { replace: true });
-    } catch {
-      toast.error('ডেমো লগইনে সমস্যা হয়েছে');
-    } finally {
-      setDemoLoading(false);
     }
   };
 
@@ -93,7 +61,7 @@ export const FirebaseAuthorizedDomainModal: React.FC<Props> = ({
         {/* Content */}
         <div className="p-6 space-y-5 text-slate-700">
           <p className="text-xs sm:text-sm leading-relaxed text-slate-600">
-            গুগল সিকিউরিটি পলিসি অনুযায়ী, বর্তমান প্রিভিউ ডোমেইনটি আপনার Firebase প্রোজেক্টের (<span className="font-mono font-bold text-slate-900">telecom-18f17</span>) Authorized Domains তালিকায় যুক্ত করতে হবে।
+            গুগল সিকিউরিটি পলিসি অনুযায়ী, বর্তমান প্রিভিউ ডোমেইনটি আপনার Firebase প্রোজেক্টের (<span className="font-mono font-bold text-slate-900">black-zone-shops</span>) Authorized Domains তালিকায় যুক্ত করতে হবে।
           </p>
 
           {/* Current Domain Box with Copy */}
@@ -144,33 +112,21 @@ export const FirebaseAuthorizedDomainModal: React.FC<Props> = ({
             </a>
           </div>
 
-          {/* Instant 1-Click Fallback Options */}
+          {/* Live Auth Alternative */}
           <div className="pt-2 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-              <span>দেরি না করে এখনই টেস্ট করতে নিচের ১-ক্লিক অপশন বেছে নিন:</span>
+            <p className="text-xs text-slate-600 mb-3">
+              ডোমেইন যুক্ত করা পর্যন্ত আপনি সরাসরি রিয়েল ইমেইল এবং পাসওয়ার্ড দিয়ে লগইন ও রেজিস্ট্রেশন করতে পারেন।
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                disabled={demoLoading}
-                onClick={handleDemoCustomerLogin}
-                className="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
-              >
-                <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span>গ্রাহক ডেমো লগইন</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={demoLoading}
-                onClick={handleDemoAdminLogin}
-                className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
-              >
-                <Shield className="w-4 h-4 text-amber-400" />
-                <span>মাস্টার অ্যাডমিন ডেমো লগইন</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/login');
+              }}
+              className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+            >
+              <span>ইমেইল ও পাসওয়ার্ড দিয়ে সাইন-ইন করুন</span>
+            </button>
           </div>
         </div>
 

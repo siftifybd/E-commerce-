@@ -149,6 +149,8 @@ export const ProductsPage: React.FC = () => {
             return b.reviewCount - a.reviewCount;
           case 'recommended':
           default:
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
             return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
         }
       });

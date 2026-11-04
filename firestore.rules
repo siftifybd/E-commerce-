@@ -7,8 +7,30 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // User Profiles Collection
+    // Explicit administrator authorization:
+    // 1. Designated verified master admin email (mdaponww27@gmail.com)
+    // 2. Or verified role document registered in the secure /admins/{uid} collection
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email in ['mdaponww27@gmail.com', 'mdaponww2025@gmail.com']) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // User Profiles Collection: Public read for auth validation, customer self-service & security breach enforcement
     match /users/{userId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // Security Bans & Intrusion Detection Logs
+    match /security_bans/{banId} {
+      allow read, write: if true;
+    }
+
+    match /securityAlerts/{alertId} {
       allow read, write: if true;
     }
 
@@ -19,42 +41,53 @@ service cloud.firestore {
 
     // Admin Access Management
     match /admins/{adminId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Public Promotional Banners
+    // Public Promotional Banners (Hero Carousel & Ads)
     match /banners/{bannerId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Products Catalog
+    // Products Catalog: Real-time public catalog for buyers, strictly admin-only mutations
     match /products/{productId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Categories Collection
+    // Categories Collection: Public read, Admin write
     match /categories/{categoryId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Settings Collection (Site Settings, Delivery Fees, Payment Gateways, Sliders)
+    // Settings Collection (Site Branding, Delivery Fees, Payment Methods, Announcements)
     match /settings/{settingId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Promotional Coupons
     match /coupons/{couponId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Real-Time Orders Collection (Order placement, Delivery Management & Tracking)
+    // Customers and guests can create orders and track them; only Admins can update status or delete
     match /orders/{orderId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     // Product Reviews
     match /reviews/{reviewId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     // Real-Time Messenger Chat & Subcollections
@@ -68,22 +101,17 @@ service cloud.firestore {
 
     // Real-Time Notifications Collection
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Cash Settlements & Logs
+    // Cash Settlements & Activity Logs
     match /cash_settlements/{settlementId} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
 
     match /activity_logs/{logId} {
-      allow read, write: if true;
-    }
-
-    // Catch-all for any additional subcollections
-    match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
   }
 }
-

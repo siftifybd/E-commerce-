@@ -3,10 +3,11 @@
  * Powered by Firebase Firestore Enterprise & Firebase Auth
  */
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { 
   initializeFirestore, 
+  getFirestore,
   doc, 
   getDocFromServer,
   persistentLocalCache,
@@ -14,21 +15,43 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../../firebase-applet-config.json';
 
-// Initialize Firebase App
-export const app = initializeApp(firebaseConfig);
+// Initialize Firebase App as singleton
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// CRITICAL: Initialize Firestore with specific database ID and force long polling for reliable connectivity in preview environments
-// Added persistent local cache for better offline resilience
-export const db = initializeFirestore(
-  app,
-  {
-    experimentalForceLongPolling: true,
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager(),
-    }),
-  },
-  firebaseConfig.firestoreDatabaseId
-);
+// CRITICAL: Initialize Firestore with support for default '(default)' or custom database ID
+const customDbId =
+  (firebaseConfig as any).firestoreDatabaseId &&
+  (firebaseConfig as any).firestoreDatabaseId !== '(default)'
+    ? (firebaseConfig as any).firestoreDatabaseId
+    : undefined;
+
+let firestoreInstance;
+try {
+  firestoreInstance = customDbId
+    ? initializeFirestore(
+        app,
+        {
+          experimentalForceLongPolling: true,
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        },
+        customDbId
+      )
+    : initializeFirestore(
+        app,
+        {
+          experimentalForceLongPolling: true,
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        }
+      );
+} catch {
+  firestoreInstance = customDbId ? getFirestore(app, customDbId) : getFirestore(app);
+}
+
+export const db = firestoreInstance;
 
 // Initialize Firebase Authentication
 export const auth = getAuth(app);

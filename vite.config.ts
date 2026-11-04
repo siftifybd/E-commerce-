@@ -9,7 +9,15 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(process.cwd(), '.'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(process.cwd(), 'index.html'),
+          admin: path.resolve(process.cwd(), 'admin.html'),
+        },
       },
     },
     server: {

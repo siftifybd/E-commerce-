@@ -11,7 +11,9 @@ const getInitialSettings = (): StoreSettings => {
     const cached = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_CACHE_KEY) : null;
     if (cached) {
       const parsed = JSON.parse(cached);
-      const siteName = parsed.siteName && parsed.siteName !== 'BD SHOPS' && parsed.siteName !== 'BD STORE' ? parsed.siteName : DEFAULT_STORE_SETTINGS.siteName;
+      const siteName = (parsed.siteName && typeof parsed.siteName === 'string' && parsed.siteName.trim())
+        ? parsed.siteName.trim()
+        : DEFAULT_STORE_SETTINGS.siteName;
       const siteLogo = parsed.siteLogo || DEFAULT_STORE_SETTINGS.siteLogo;
       const favicon = parsed.favicon || DEFAULT_STORE_SETTINGS.favicon;
       return {
@@ -132,15 +134,23 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // 5. Dynamic Document Title & Site Name Meta
     if (settings.siteName) {
-      // If title is default or not customized per page, reflect store title dynamically
-      if (!document.title || document.title.includes('BD SHOPS') || document.title.includes('BD STORE') || document.title.includes('Black Zone') || document.title.includes(settings.siteName)) {
-        document.title = `${settings.siteName} — ${settings.siteName === 'Black Zone' ? 'অনলাইন শপিং মল' : 'Online Shopping'}`;
-      }
+      const formattedTitle = `${settings.siteName} — প্রিমিয়াম অনলাইন শপিং`;
+      document.title = formattedTitle;
+      
       const metaOg = document.querySelector('meta[property="og:site_name"]');
       if (metaOg) metaOg.setAttribute('content', settings.siteName);
 
+      const metaOgTitle = document.querySelector('meta[property="og:title"]');
+      if (metaOgTitle) metaOgTitle.setAttribute('content', formattedTitle);
+
       const metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
       if (metaApple) metaApple.setAttribute('content', settings.siteName);
+
+      try {
+        localStorage.setItem('bd_shops_site_name', settings.siteName);
+      } catch {
+        // ignore
+      }
     }
   }, [settings]);
 
@@ -148,15 +158,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const unsubscribe = subscribeToStoreSettings(
       (newSettings) => {
-        if (!isDirty || initialLoadRef.current) {
-          setSettings(newSettings);
-          try {
-            localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(newSettings));
-          } catch {
-            // ignore
+        setSettings(newSettings);
+        try {
+          localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(newSettings));
+          if (newSettings.siteName) {
+            localStorage.setItem('bd_shops_site_name', newSettings.siteName);
+            document.title = `${newSettings.siteName} — প্রিমিয়াম অনলাইন শপিং`;
           }
-          initialLoadRef.current = false;
+        } catch {
+          // ignore
         }
+        initialLoadRef.current = false;
         setLoading(false);
       },
       (error) => {

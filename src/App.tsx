@@ -171,8 +171,8 @@ export const App: React.FC = () => {
               <Route path="account/orders" element={<OrdersHistoryPage />} />
               <Route path="account/wishlist" element={<WishlistPage />} />
 
-              {/* Admin Control Routes */}
-              <Route path="admin/portal" element={<AdminPortalPage />} />
+              {/* Admin standalone redirect */}
+              <Route path="admin/portal" element={<Navigate to="/admin" replace />} />
               <Route path="admin/settings" element={<Navigate to="/admin?tab=system" replace />} />
 
               {/* Notifications Route */}

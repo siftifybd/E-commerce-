@@ -1,12 +1,13 @@
 {
-  "projectId": "telecom-18f17",
-  "appId": "1:820847044951:web:9156f67e2d5b52f820b612",
-  "apiKey": "AIzaSyCygbbeY15Q9Oyz2lwH8rRfMQRCIcQ3ziA",
-  "authDomain": "telecom-18f17.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-04b9cb30-5134-44c7-99c7-b20d0757a1fc",
-  "storageBucket": "telecom-18f17.firebasestorage.app",
-  "messagingSenderId": "820847044951",
-  "measurementId": "",
-  "oAuthClientId": "820847044951-0bu2v7d0a7uiq6iq447pvnjjks9744eu.apps.googleusercontent.com",
+  "projectId": "black-zone-shops",
+  "appId": "1:57254397387:web:9b21b82dd1575aa913a24e",
+  "apiKey": "AIzaSyCbF5H1t8nXS-mJ7okyVf9N5HpNevkzQuI",
+  "authDomain": "black-zone-shops.firebaseapp.com",
+  "databaseURL": "https://black-zone-shops-default-rtdb.firebaseio.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "black-zone-shops.firebasestorage.app",
+  "messagingSenderId": "57254397387",
+  "measurementId": "G-L198YW5MZF",
+  "oAuthClientId": "57254397387-m5uljfe2b1r0h4kf33l7j444pvuhfc74.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

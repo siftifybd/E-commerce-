@@ -20,13 +20,17 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { APP_CONFIG } from '../../constants';
 import { FirebaseAuthorizedDomainModal } from '../../components/common/FirebaseAuthorizedDomainModal';
+import { AdminBlockedModal } from '../../components/common/AdminBlockedModal';
+import { verifyIsAdmin, verifyIsDeliveryRider, checkUserBanStatus } from '../../services/adminAuth';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginWithEmail, loginWithGoogle, loginWithDemoAccount, currentUser, role } = useAuth();
+  const { loginWithEmail, loginWithGoogle, currentUser, logout } = useAuth();
+  const { settings: storeSettings } = useSettings();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,21 +39,20 @@ export const LoginPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showDomainModal, setShowDomainModal] = useState(false);
 
+  // Admin/Delivery Blocked Fullscreen Modal State
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [blockedModalEmail, setBlockedModalEmail] = useState('');
+  const [blockedModalMode, setBlockedModalMode] = useState<'admin' | 'delivery'>('admin');
+
   // Return to intended page after login (default to /profile)
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/profile';
 
-  // If already logged in, route according to role
+  // If already logged in, navigate to profile or return page
   React.useEffect(() => {
     if (currentUser) {
-      const isOwner = currentUser.email === 'mdaponww2025@gmail.com' || currentUser.email === 'mdaponww27@gmail.com' || role === 'admin' || role === 'super_admin';
-      if (isOwner) {
-        toast.success('অ্যাডমিন প্যানেলে স্বাগতম!');
-        navigate('/admin', { replace: true });
-        return;
-      }
       navigate(from, { replace: true });
     }
-  }, [currentUser, role, navigate, from]);
+  }, [currentUser, navigate, from]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +64,41 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const isOwner = cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com';
+
+      // 1. Strict Admin Email Protection: NEVER allow Admin to log into User app!
+      const isAdmin = await verifyIsAdmin(cleanEmail);
+      if (isAdmin) {
+        setBlockedModalEmail(cleanEmail);
+        setBlockedModalMode('admin');
+        setBlockedModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Strict Delivery Email Protection: NEVER allow Delivery man to log into User app!
+      const isDelivery = await verifyIsDeliveryRider(cleanEmail);
+      if (isDelivery) {
+        setBlockedModalEmail(cleanEmail);
+        setBlockedModalMode('delivery');
+        setBlockedModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Check if user is banned or suspended
+      const banCheck = await checkUserBanStatus(cleanEmail);
+      if (banCheck.isBanned) {
+        toast.error(
+          `🚫 আপনার অ্যাকাউন্টটি সাসপেন্ড / ব্যান করা হয়েছে। কারণ: ${banCheck.reason || 'নিরাপত্তা নিষেধাজ্ঞা'}`,
+          { duration: 6000 }
+        );
+        setLoading(false);
+        return;
+      }
+
       await loginWithEmail(cleanEmail, password);
-      toast.success(isOwner ? 'অ্যাডমিন হিসেবে লগইন সফল হয়েছে!' : 'সফলভাবে লগইন হয়েছে!');
-      navigate(isOwner ? '/admin' : from, { replace: true });
+      toast.success('সফলভাবে লগইন হয়েছে!');
+      navigate(from, { replace: true });
     } catch (err: any) {
       let msg = 'লগইন করতে ব্যর্থ হয়েছে। ইমেইল ও পাসওয়ার্ড পুনরায় যাচাই করুন।';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -82,6 +116,37 @@ export const LoginPage: React.FC = () => {
     setGoogleLoading(true);
     try {
       await loginWithGoogle();
+
+      // Verify Google login account role after popup completes
+      // If an admin logged in with Google on the user app, immediately sign out and show blocked modal!
+      if (currentUser?.email) {
+        const userEmail = currentUser.email.toLowerCase().trim();
+        const isAdmin = await verifyIsAdmin(userEmail);
+        if (isAdmin) {
+          await logout();
+          setBlockedModalEmail(userEmail);
+          setBlockedModalMode('admin');
+          setBlockedModalOpen(true);
+          return;
+        }
+
+        const isDelivery = await verifyIsDeliveryRider(userEmail);
+        if (isDelivery) {
+          await logout();
+          setBlockedModalEmail(userEmail);
+          setBlockedModalMode('delivery');
+          setBlockedModalOpen(true);
+          return;
+        }
+
+        const ban = await checkUserBanStatus(currentUser.uid || userEmail);
+        if (ban.isBanned) {
+          await logout();
+          toast.error(`🚫 আপনার অ্যাকাউন্টটি সাসপেন্ড করা হয়েছে!`, { duration: 6000 });
+          return;
+        }
+      }
+
       toast.success('গুগল দিয়ে সফলভাবে লগইন হয়েছে!');
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -95,10 +160,13 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const currentBrandName = storeSettings?.siteName || APP_CONFIG.name;
+  const currentBrandLogo = storeSettings?.siteLogo || APP_CONFIG.logo;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 px-4 relative">
       <Helmet>
-        <title>{`লগইন করুন — ${APP_CONFIG.name}`}</title>
+        <title>{`লগইন করুন — ${currentBrandName}`}</title>
       </Helmet>
 
       {/* Direct Back to Home Button */}
@@ -114,13 +182,20 @@ export const LoginPage: React.FC = () => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
-        <Link to="/" replace className="inline-block">
+        <Link to="/" replace className="inline-flex items-center gap-2.5 justify-center">
+          {currentBrandLogo ? (
+            <img
+              src={currentBrandLogo}
+              alt={currentBrandName}
+              className="h-11 w-11 object-cover rounded-2xl shadow-xs border border-slate-200/80"
+            />
+          ) : null}
           <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            BD<span className="text-[#00BFA5]">SHOPS</span>
+            {currentBrandName}
           </span>
         </Link>
         <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-          আপনার একাউন্টে লগইন করুন
+          আপনার কাস্টমার একাউন্টে লগইন করুন
         </h1>
         <p className="text-xs sm:text-sm text-slate-500">
           নতুন গ্রাহক?{' '}
@@ -246,37 +321,6 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Login Option for Instant Testing */}
-          <div className="pt-2 border-t border-slate-100 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-              <span>দ্রুত টেস্টিং একাউন্ট (১-ক্লিক):</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  await loginWithDemoAccount('customer');
-                  toast.success('গ্রাহক হিসেবে ডেমো লগইন হয়েছে!');
-                  navigate(from, { replace: true });
-                }}
-                className="py-2 px-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-700 rounded-xl text-xs font-bold transition-all text-center cursor-pointer"
-              >
-                গ্রাহক ডেমো
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await loginWithDemoAccount('admin');
-                  toast.success('মাস্টার অ্যাডমিন হিসেবে লগইন হয়েছে!');
-                  navigate('/admin', { replace: true });
-                }}
-                className="py-2 px-2.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-700 hover:text-amber-700 rounded-xl text-xs font-bold transition-all text-center cursor-pointer"
-              >
-                অ্যাডমিন ডেমো
-              </button>
-            </div>
-          </div>
-
           {/* Trust Badge */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-[#00BFA5]" />
@@ -289,6 +333,14 @@ export const LoginPage: React.FC = () => {
       <FirebaseAuthorizedDomainModal
         isOpen={showDomainModal}
         onClose={() => setShowDomainModal(false)}
+      />
+
+      {/* Admin / Delivery Login Blocked Fullscreen Modal */}
+      <AdminBlockedModal
+        isOpen={blockedModalOpen}
+        onClose={() => setBlockedModalOpen(false)}
+        email={blockedModalEmail}
+        mode={blockedModalMode}
       />
     </div>
   );

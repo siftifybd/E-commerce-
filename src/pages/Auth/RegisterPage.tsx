@@ -23,14 +23,18 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { APP_CONFIG } from '../../constants';
 import { BD_ALL_DISTRICTS, getUpazilasForDistrict } from '../../constants/bangladeshData';
 import { FirebaseAuthorizedDomainModal } from '../../components/common/FirebaseAuthorizedDomainModal';
+import { AdminBlockedModal } from '../../components/common/AdminBlockedModal';
+import { verifyIsAdmin, verifyIsDeliveryRider, checkUserBanStatus } from '../../services/adminAuth';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { registerWithEmail, loginWithGoogle, currentUser, role, addUserAddress } = useAuth();
+  const { registerWithEmail, loginWithGoogle, currentUser, logout, addUserAddress } = useAuth();
+  const { settings: storeSettings } = useSettings();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -47,20 +51,19 @@ export const RegisterPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showDomainModal, setShowDomainModal] = useState(false);
 
+  // Admin/Delivery Blocked Fullscreen Modal State
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [blockedModalEmail, setBlockedModalEmail] = useState('');
+  const [blockedModalMode, setBlockedModalMode] = useState<'admin' | 'delivery'>('admin');
+
   // Return to intended page after signup (default to /profile)
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/profile';
 
   React.useEffect(() => {
     if (currentUser) {
-      const isOwner = currentUser.email === 'mdaponww2025@gmail.com' || currentUser.email === 'mdaponww27@gmail.com' || role === 'admin' || role === 'super_admin';
-      if (isOwner) {
-        toast.success('অ্যাডমিন প্যানেলে স্বাগতম!');
-        navigate('/admin', { replace: true });
-        return;
-      }
       navigate(from, { replace: true });
     }
-  }, [currentUser, role, navigate, from]);
+  }, [currentUser, navigate, from]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,10 +91,32 @@ export const RegisterPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Security Check: Prevent registering with admin email
       const cleanEmail = email.trim().toLowerCase();
-      if (cleanEmail === 'mdaponww2025@gmail.com' || cleanEmail === 'mdaponww27@gmail.com') {
-        toast.error('এই ইমেইলটি অ্যাডমিন হিসেবে সংরক্ষিত। দয়া করে লগইন করুন।');
+
+      // 1. Security Check: Prevent registering with admin email
+      const isAdmin = await verifyIsAdmin(cleanEmail);
+      if (isAdmin) {
+        setBlockedModalEmail(cleanEmail);
+        setBlockedModalMode('admin');
+        setBlockedModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Prevent registering with delivery email
+      const isDelivery = await verifyIsDeliveryRider(cleanEmail);
+      if (isDelivery) {
+        setBlockedModalEmail(cleanEmail);
+        setBlockedModalMode('delivery');
+        setBlockedModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Prevent registering if email is suspended/banned
+      const ban = await checkUserBanStatus(cleanEmail);
+      if (ban.isBanned) {
+        toast.error(`🚫 এই ইমেইলটি ব্যান বা সাসপেন্ড করা হয়েছে! কারণ: ${ban.reason || 'নিরাপত্তা নিষেধাজ্ঞা'}`, { duration: 6000 });
         setLoading(false);
         return;
       }
@@ -140,6 +165,35 @@ export const RegisterPage: React.FC = () => {
     setGoogleLoading(true);
     try {
       await loginWithGoogle();
+
+      if (currentUser?.email) {
+        const userEmail = currentUser.email.toLowerCase().trim();
+        const isAdmin = await verifyIsAdmin(userEmail);
+        if (isAdmin) {
+          await logout();
+          setBlockedModalEmail(userEmail);
+          setBlockedModalMode('admin');
+          setBlockedModalOpen(true);
+          return;
+        }
+
+        const isDelivery = await verifyIsDeliveryRider(userEmail);
+        if (isDelivery) {
+          await logout();
+          setBlockedModalEmail(userEmail);
+          setBlockedModalMode('delivery');
+          setBlockedModalOpen(true);
+          return;
+        }
+
+        const ban = await checkUserBanStatus(currentUser.uid || userEmail);
+        if (ban.isBanned) {
+          await logout();
+          toast.error(`🚫 আপনার অ্যাকাউন্টটি সাসপেন্ড করা হয়েছে!`, { duration: 6000 });
+          return;
+        }
+      }
+
       toast.success('গুগল দিয়ে সফলভাবে একাউন্ট তৈরি হয়েছে!');
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -153,10 +207,13 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  const currentBrandName = storeSettings?.siteName || APP_CONFIG.name;
+  const currentBrandLogo = storeSettings?.siteLogo || APP_CONFIG.logo;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 px-4 relative">
       <Helmet>
-        <title>{`নতুন একাউন্ট তৈরি করুন — ${APP_CONFIG.name}`}</title>
+        <title>{`নতুন একাউন্ট তৈরি করুন — ${currentBrandName}`}</title>
       </Helmet>
 
       {/* Direct Back to Home Button */}
@@ -172,9 +229,16 @@ export const RegisterPage: React.FC = () => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
-        <Link to="/" replace className="inline-block">
+        <Link to="/" replace className="inline-flex items-center gap-2.5 justify-center">
+          {currentBrandLogo ? (
+            <img
+              src={currentBrandLogo}
+              alt={currentBrandName}
+              className="h-11 w-11 object-cover rounded-2xl shadow-xs border border-slate-200/80"
+            />
+          ) : null}
           <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            BD<span className="text-[#00BFA5]">SHOPS</span>
+            {currentBrandName}
           </span>
         </Link>
         <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
@@ -464,6 +528,14 @@ export const RegisterPage: React.FC = () => {
         isOpen={showDomainModal}
         onClose={() => setShowDomainModal(false)}
         title="গুগল সাইন-আপ ডোমেইন অথোরাইজেশন"
+      />
+
+      {/* Admin / Delivery Login Blocked Fullscreen Modal */}
+      <AdminBlockedModal
+        isOpen={blockedModalOpen}
+        onClose={() => setBlockedModalOpen(false)}
+        email={blockedModalEmail}
+        mode={blockedModalMode}
       />
     </div>
   );

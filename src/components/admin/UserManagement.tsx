@@ -31,64 +31,6 @@ import { db } from '../../services/firebase/config';
 import { UserProfile, Order, Role } from '../../types';
 import toast from 'react-hot-toast';
 
-// Initial fallback mock users if firestore has no data yet
-const SAMPLE_USERS: UserProfile[] = [
-  {
-    uid: 'usr_sample_1',
-    displayName: 'মোহাম্মদ আরিয়ান',
-    name: 'মোহাম্মদ আরিয়ান',
-    email: 'ariyan.bd@gmail.com',
-    phoneNumber: '01711223344',
-    phone: '01711223344',
-    role: 'customer',
-    status: 'active',
-    isSuspended: false,
-    createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-    addresses: [
-      {
-        id: 'addr_1',
-        district: 'Dhaka',
-        address: 'House 42, Road 11, Banani, Dhaka',
-        isDefault: true,
-      }
-    ],
-    notes: 'নিয়মিত কাস্টমার'
-  },
-  {
-    uid: 'usr_sample_2',
-    displayName: 'নাসরিন সুলতানা',
-    name: 'নাসরিন সুলতানা',
-    email: 'nasrin.sultana@yahoo.com',
-    phoneNumber: '01899887766',
-    phone: '01899887766',
-    role: 'customer',
-    status: 'active',
-    isSuspended: false,
-    createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
-    addresses: [
-      {
-        id: 'addr_2',
-        district: 'Chittagong',
-        address: 'GEC Circle, Chittagong',
-        isDefault: true,
-      }
-    ]
-  },
-  {
-    uid: 'usr_sample_3',
-    displayName: 'রফিকুল ইসলাম',
-    name: 'রফিকুল ইসলাম',
-    email: 'rafiq.test@gmail.com',
-    phoneNumber: '01911002233',
-    phone: '01911002233',
-    role: 'customer',
-    status: 'suspended',
-    isSuspended: true,
-    createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
-    notes: 'ফেইক অর্ডার দেওয়ার চেষ্টা করার কারণে সাসপেন্ড করা হয়েছে'
-  }
-];
-
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -125,16 +67,12 @@ export const UserManagement: React.FC = () => {
           fetchedUsers.push({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
         });
 
-        if (fetchedUsers.length > 0) {
-          setUsers(fetchedUsers);
-        } else {
-          setUsers(SAMPLE_USERS);
-        }
+        setUsers(fetchedUsers);
         setLoading(false);
       },
       (error) => {
         console.warn('Firestore users subscription fallback:', error);
-        setUsers(SAMPLE_USERS);
+        setUsers([]);
         setLoading(false);
       }
     );
@@ -601,10 +539,17 @@ export const UserManagement: React.FC = () => {
                         <div className="space-y-1.5">
                           <div>
                             {isSuspended ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                সাসপেন্ডেড
-                              </span>
+                              <div className="space-y-0.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                  {user.banReason?.includes('অ্যাডমিন') ? '🚨 অটো ব্যানড (অ্যাডমিন অনুপ্রবেশের চেষ্টা)' : 'সাসপেন্ডেড'}
+                                </span>
+                                {user.banReason && (
+                                  <p className="text-[9px] text-rose-600 dark:text-rose-400 font-semibold max-w-[200px] truncate" title={user.banReason}>
+                                    {user.banReason}
+                                  </p>
+                                )}
+                              </div>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

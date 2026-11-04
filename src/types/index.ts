@@ -262,7 +262,10 @@ export interface UserProfile {
   createdAt?: string;
   updatedAt?: string;
   isSuspended?: boolean;
+  isBanned?: boolean;
   status?: 'active' | 'suspended';
+  banReason?: string;
+  bannedAt?: string;
   totalOrders?: number;
   totalSpent?: number;
   notes?: string;

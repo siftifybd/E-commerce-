@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, Navigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   User,
@@ -44,6 +44,7 @@ type ActiveTab = 'overview' | 'edit' | 'addresses' | 'orders' | 'security';
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as ActiveTab) || 'overview';
 
@@ -135,10 +136,9 @@ export const ProfilePage: React.FC = () => {
     );
   }
 
-  // Redirect if not logged in
+  // Redirect safely if not logged in (declarative to prevent setState-in-render errors)
   if (!currentUser) {
-    navigate('/login', { state: { from: { pathname: '/account' } } });
-    return null;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -397,16 +397,6 @@ export const ProfilePage: React.FC = () => {
           <Lock className="w-4 h-4" />
           <span>সিকিউরিটি ও পাসওয়ার্ড</span>
         </button>
-
-        {(role === 'admin' || role === 'super_admin') && (
-          <Link
-            to="/admin/settings"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 transition-all whitespace-nowrap cursor-pointer shadow-md shadow-amber-500/20"
-          >
-            <Settings className="w-4 h-4" />
-            <span>এডমিন সাইট কন্ট্রোল</span>
-          </Link>
-        )}
       </div>
 
       {/* TAB CONTENT AREAS */}

@@ -13,10 +13,16 @@
           var raw = localStorage.getItem('bdshops_cached_settings');
           if (raw) {
             var s = JSON.parse(raw);
-            if (s.siteName) {
-              document.title = s.siteName + ' — ' + (s.siteName === 'Black Zone' || s.siteName === 'BD STORE' || s.siteName === 'BD SHOPS' ? 'Premium Online Shopping in Bangladesh' : 'Online Shopping');
+            var siteName = s.siteName || localStorage.getItem('bd_shops_site_name') || 'Black Zone';
+            if (siteName) {
+              var formattedTitle = siteName + ' — প্রিমিয়াম অনলাইন শপিং';
+              document.title = formattedTitle;
               var metaApple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-              if (metaApple) metaApple.setAttribute('content', s.siteName);
+              if (metaApple) metaApple.setAttribute('content', siteName);
+              var ogSite = document.querySelector('meta[property="og:site_name"]');
+              if (ogSite) ogSite.setAttribute('content', siteName);
+              var ogTitle = document.querySelector('meta[property="og:title"]');
+              if (ogTitle) ogTitle.setAttribute('content', formattedTitle);
             }
             if (s.favicon) {
               var iconLink = document.querySelector("link[rel*='icon']");
